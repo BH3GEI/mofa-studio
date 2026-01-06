@@ -5,7 +5,6 @@ use crate::mofa_hero::{MofaHeroWidgetExt, MofaHeroAction, ConnectionStatus};
 use crate::log_bridge;
 use crate::dora_integration::{DoraIntegration, DoraCommand, DoraEvent};
 use mofa_widgets::participant_panel::ParticipantPanelWidgetExt;
-use mofa_widgets::StateChangeListener;
 use mofa_settings::data::Preferences;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -2093,107 +2092,6 @@ impl MoFaFMScreenRef {
             inner.audio_timer = cx.start_interval(0.05);  // 50ms for mic level
             inner.dora_timer = cx.start_interval(0.1);    // 100ms for dora events
             ::log::debug!("MoFaFMScreen timers started");
-        }
-    }
-}
-
-impl StateChangeListener for MoFaFMScreenRef {
-    fn on_dark_mode_change(&self, cx: &mut Cx, dark_mode: f64) {
-        if let Some(mut inner) = self.borrow_mut() {
-            // Apply dark mode to screen background
-            inner.view.apply_over(cx, live!{
-                draw_bg: { dark_mode: (dark_mode) }
-            });
-
-            // Apply dark mode to chat section
-            inner.view.view(ids!(left_column.chat_container.chat_section)).apply_over(cx, live!{
-                draw_bg: { dark_mode: (dark_mode) }
-            });
-
-            // Apply dark mode to chat header and title
-            inner.view.view(ids!(left_column.chat_container.chat_section.chat_header)).apply_over(cx, live!{
-                draw_bg: { dark_mode: (dark_mode) }
-            });
-            inner.view.label(ids!(left_column.chat_container.chat_section.chat_header.chat_title)).apply_over(cx, live!{
-                draw_text: { dark_mode: (dark_mode) }
-            });
-
-            // Apply dark mode to audio control containers
-            inner.view.view(ids!(left_column.audio_container.mic_container)).apply_over(cx, live!{
-                draw_bg: { dark_mode: (dark_mode) }
-            });
-            inner.view.view(ids!(left_column.audio_container.aec_container)).apply_over(cx, live!{
-                draw_bg: { dark_mode: (dark_mode) }
-            });
-            inner.view.view(ids!(left_column.audio_container.device_container)).apply_over(cx, live!{
-                draw_bg: { dark_mode: (dark_mode) }
-            });
-
-            // Apply dark mode to device labels
-            inner.view.label(ids!(left_column.audio_container.device_container.device_selectors.input_device_group.input_device_label)).apply_over(cx, live!{
-                draw_text: { dark_mode: (dark_mode) }
-            });
-            inner.view.label(ids!(left_column.audio_container.device_container.device_selectors.output_device_group.output_device_label)).apply_over(cx, live!{
-                draw_text: { dark_mode: (dark_mode) }
-            });
-
-            // NOTE: DropDown apply_over causes "target class not found" errors
-            // TODO: Find alternative way to theme dropdowns
-
-            // Apply dark mode to MofaHero
-            inner.view.mofa_hero(ids!(left_column.mofa_hero)).update_dark_mode(cx, dark_mode);
-
-            // Apply dark mode to participant panels
-            inner.view.participant_panel(ids!(left_column.participant_container.participant_bar.student1_panel)).update_dark_mode(cx, dark_mode);
-            inner.view.participant_panel(ids!(left_column.participant_container.participant_bar.student2_panel)).update_dark_mode(cx, dark_mode);
-            inner.view.participant_panel(ids!(left_column.participant_container.participant_bar.tutor_panel)).update_dark_mode(cx, dark_mode);
-
-            // Apply dark mode to prompt section
-            inner.view.view(ids!(left_column.prompt_container.prompt_section)).apply_over(cx, live!{
-                draw_bg: { dark_mode: (dark_mode) }
-            });
-            // NOTE: TextInput apply_over causes "target class not found" errors
-            inner.view.button(ids!(left_column.prompt_container.prompt_section.prompt_row.button_group.reset_btn)).apply_over(cx, live!{
-                draw_bg: { dark_mode: (dark_mode) }
-                draw_text: { dark_mode: (dark_mode) }
-            });
-
-            // Apply dark mode to splitter
-            inner.view.view(ids!(splitter)).apply_over(cx, live!{
-                draw_bg: { dark_mode: (dark_mode) }
-            });
-
-            // Apply dark mode to log section - toggle column
-            inner.view.view(ids!(log_section.toggle_column)).apply_over(cx, live!{
-                draw_bg: { dark_mode: (dark_mode) }
-            });
-            inner.view.button(ids!(log_section.toggle_column.toggle_log_btn)).apply_over(cx, live!{
-                draw_bg: { dark_mode: (dark_mode) }
-                draw_text: { dark_mode: (dark_mode) }
-            });
-
-            // Apply dark mode to log section - log content column
-            inner.view.view(ids!(log_section.log_content_column)).apply_over(cx, live!{
-                draw_bg: { dark_mode: (dark_mode) }
-            });
-            inner.view.view(ids!(log_section.log_content_column.log_header)).apply_over(cx, live!{
-                draw_bg: { dark_mode: (dark_mode) }
-            });
-            inner.view.label(ids!(log_section.log_content_column.log_header.log_title_row.log_title_label)).apply_over(cx, live!{
-                draw_text: { dark_mode: (dark_mode) }
-            });
-
-            // Apply dark mode to log content Markdown
-            // Use apply_over with font_color - this works because font_color is a top-level property
-            if dark_mode > 0.5 {
-                inner.view.markdown(ids!(log_section.log_content_column.log_scroll.log_content_wrapper.log_content))
-                    .apply_over(cx, live!{ font_color: (vec4(0.796, 0.835, 0.882, 1.0)) }); // SLATE_300
-            } else {
-                inner.view.markdown(ids!(log_section.log_content_column.log_scroll.log_content_wrapper.log_content))
-                    .apply_over(cx, live!{ font_color: (vec4(0.294, 0.333, 0.388, 1.0)) }); // GRAY_600
-            }
-
-            inner.view.redraw(cx);
         }
     }
 }

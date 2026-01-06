@@ -1418,13 +1418,14 @@ impl App {
 
     /// Apply dark mode to screens with a specific value
     fn apply_dark_mode_screens_with_value(&mut self, cx: &mut Cx, dm: f64) {
+        // TODO: Re-implement dark mode updates for screens once StateChangeListener trait is defined
         // Apply to MoFA FM screen
-        self.ui.mo_fa_fmscreen(ids!(body.dashboard_base.content_area.main_content.content.fm_page))
-            .update_dark_mode(cx, dm);
+        // self.ui.mo_fa_fmscreen(ids!(body.dashboard_base.content_area.main_content.content.fm_page))
+        //     .update_dark_mode(cx, dm);
 
         // Apply to Settings screen in main content
-        self.ui.settings_screen(ids!(body.dashboard_base.content_area.main_content.content.settings_page))
-            .update_dark_mode(cx, dm);
+        // self.ui.settings_screen(ids!(body.dashboard_base.content_area.main_content.content.settings_page))
+        //     .update_dark_mode(cx, dm);
 
         // Apply to tab overlay content - only when tabs are open
         if !self.open_tabs.is_empty() {

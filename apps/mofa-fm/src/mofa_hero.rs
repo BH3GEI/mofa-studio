@@ -435,8 +435,11 @@ pub struct MofaHero {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub enum ConnectionStatus {
     Ready,
+    Connecting,
     #[default]
     Connected,
+    Stopping,
+    Stopped,
     Failed,
 }
 
@@ -601,8 +604,11 @@ impl MofaHero {
         self.connection_status = status.clone();
 
         let (status_val, text, dot_color) = match status {
-            ConnectionStatus::Ready => (0.0, "Ready", (0.13, 0.77, 0.37)),      // Green
-            ConnectionStatus::Connected => (1.0, "Connected", (0.0, 1.0, 0.5)),  // Neon green
+            ConnectionStatus::Ready => (0.0, "Ready", (0.13, 0.77, 0.37)),        // Green
+            ConnectionStatus::Connecting => (0.5, "Connecting", (0.8, 0.8, 0.0)), // Yellow
+            ConnectionStatus::Connected => (1.0, "Connected", (0.0, 1.0, 0.5)),   // Neon green
+            ConnectionStatus::Stopping => (0.5, "Stopping", (0.8, 0.6, 0.0)),     // Orange
+            ConnectionStatus::Stopped => (0.0, "Stopped", (0.5, 0.5, 0.5)),       // Gray
             ConnectionStatus::Failed => (2.0, "Failed", (0.95, 0.25, 0.25)),      // Red
         };
 
