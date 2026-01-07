@@ -116,7 +116,7 @@ nodes:
 
   # PrimeSpeech TTS for Student1 (Zhao Daniu - Male, Rational Voice)
   - id: primespeech-student1
-    build: pip install -e ../../../node-hub/dora-common && pip install -e ../../../node-hub/dora-primespeech
+    build: pip install -e ../../../libs/dora-common -e ../../../node-hub/dora-primespeech
     path: dora-primespeech
     inputs:
       text: multi-text-segmenter/text_segment_student1
@@ -147,7 +147,7 @@ nodes:
 
   # PrimeSpeech TTS for Student2 (Chen Yifan - Female, Emotional Voice)
   - id: primespeech-student2
-    build: pip install -e ../../../node-hub/dora-common && pip install -e ../../../node-hub/dora-primespeech
+    build: pip install -e ../../../libs/dora-common -e ../../../node-hub/dora-primespeech
     path: dora-primespeech
     inputs:
       text: multi-text-segmenter/text_segment_student2
@@ -178,7 +178,7 @@ nodes:
 
   # PrimeSpeech TTS for Tutor (Luo Xiang - Male, Authoritative Voice)
   - id: primespeech-tutor
-    build: pip install -e ../../../node-hub/dora-common && pip install -e ../../../node-hub/dora-primespeech
+    build: pip install -e ../../../libs/dora-common -e ../../../node-hub/dora-primespeech
     path: dora-primespeech
     inputs:
       text: multi-text-segmenter/text_segment_tutor

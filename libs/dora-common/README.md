@@ -1,6 +1,6 @@
 # dora-common
 
-Common utilities for Dora nodes in the MoFA Studio node-hub.
+Common utilities for Dora nodes in MoFA Studio.
 
 ## Overview
 
@@ -9,7 +9,7 @@ This package provides shared utilities used across multiple Dora nodes, ensuring
 ## Installation
 
 ```bash
-pip install -e node-hub/dora-common
+pip install -e libs/dora-common
 ```
 
 ## Usage
