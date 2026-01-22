@@ -39,6 +39,7 @@ use mofa_fm::{MoFaFMApp, MoFaFMScreenWidgetRefExt};
 use mofa_debate::MoFaDebateApp;
 use mofa_settings::MoFaSettingsApp;
 use mofa_webview_demo::MoFaWebViewDemoApp;
+use mofa_personal_news::MoFaPersonalNewsApp;
 use mofa_settings::data::Preferences;
 use mofa_settings::screen::SettingsScreenWidgetRefExt;
 
@@ -394,6 +395,7 @@ impl LiveHook for App {
         self.app_registry.register(MoFaDebateApp::info());
         self.app_registry.register(MoFaSettingsApp::info());
         self.app_registry.register(MoFaWebViewDemoApp::info());
+        self.app_registry.register(MoFaPersonalNewsApp::info());
 
         // Initialize page router (defaults to MoFA FM)
         self.page_router = PageRouter::new();
@@ -465,6 +467,7 @@ impl LiveRegister for App {
         <MoFaDebateApp as MofaApp>::live_design(cx);
         <MoFaSettingsApp as MofaApp>::live_design(cx);
         <MoFaWebViewDemoApp as MofaApp>::live_design(cx);
+        <MoFaPersonalNewsApp as MofaApp>::live_design(cx);
 
         // Shell widgets (order matters - tabs before dashboard, apps before dashboard)
         mofa_studio_shell::widgets::sidebar::live_design(cx);
@@ -794,6 +797,12 @@ impl App {
                 .set_active(cx, false);
         }
 
+        // Deactivate WebView when leaving Personal News page
+        if old_page == Some(PageId::PersonalNews) {
+            self.ui.web_view_container(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.personal_news_page.content.webview_area.webview_wrapper.webview))
+                .set_active(cx, false);
+        }
+
         // Update page visibility
         self.update_page_visibility(cx);
 
@@ -808,6 +817,12 @@ impl App {
         // Activate WebView when entering WebView Demo page
         if page == PageId::WebViewDemo {
             self.ui.web_view_container(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.webview_demo_page.content.webview_area.webview_wrapper.webview))
+                .set_active(cx, true);
+        }
+
+        // Activate WebView when entering Personal News page
+        if page == PageId::PersonalNews {
+            self.ui.web_view_container(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.personal_news_page.content.webview_area.webview_wrapper.webview))
                 .set_active(cx, true);
         }
 
@@ -829,6 +844,8 @@ impl App {
             .apply_over(cx, live!{ visible: (current == Some(PageId::Settings)) });
         self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.webview_demo_page))
             .apply_over(cx, live!{ visible: (current == Some(PageId::WebViewDemo)) });
+        self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.personal_news_page))
+            .apply_over(cx, live!{ visible: (current == Some(PageId::PersonalNews)) });
     }
 
     /// Update hero title panel with current app info
@@ -839,6 +856,7 @@ impl App {
             PageId::Settings => ("Settings", "Configure providers and preferences"),
             PageId::App => ("Demo App", "Select an app from the sidebar"),
             PageId::WebViewDemo => ("WebView Demo", "Demonstrates WebView embedding with wry"),
+            PageId::PersonalNews => ("Personal News", "Personal news broadcast"),
         };
 
         self.ui.label(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.hero_title_panel.title_container.app_title))

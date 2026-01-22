@@ -1,0 +1,23 @@
+{
+  "mode": "morning",
+  "max_duration_seconds": 240,
+  "language": "zh-CN",
+  "city": "Beijing",
+  "rss_sources": [
+    "https://feeds.bbci.co.uk/news/rss.xml",
+    "https://www.reuters.com/rssFeed/topNews",
+    "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
+    "https://news.ycombinator.com/rss",
+    "https://techcrunch.com/feed/",
+    "https://www.theverge.com/rss/index.xml",
+    "https://www.technologyreview.com/feed/",
+    "https://arxiv.org/rss/cs.AI",
+    "https://36kr.com/feed",
+    "https://sspai.com/feed",
+    "https://daily.zhihu.com/rss"
+  ],
+  "x_priority_accounts": [
+    "elonmusk",
+    "realDonaldTrump"
+  ]
+}

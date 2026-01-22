@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>快速运行 | Personal News Broadcast</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body data-page="run">
+    <main class="page">
+      <div class="topbar">
+        <div class="brand">Personal News</div>
+        <nav class="nav">
+          <a href="/docs.html">文档</a>
+          <a class="active" href="/run.html">快速运行</a>
+          <a href="/tests.html">测试</a>
+          <a href="/about.html">网站介绍</a>
+        </nav>
+      </div>
+
+      <header class="hero">
+        <div class="hero__text">
+          <p class="eyebrow">Quick Run</p>
+          <h1>快速生成播报稿</h1>
+          <p class="lead">直接编辑 JSON 输入与配置，查看输出效果。</p>
+        </div>
+        <div class="hero__panel">
+          <div class="hero__stat">
+            <span class="stat-label">运行方式</span>
+            <span class="stat-value">本地生成</span>
+          </div>
+          <div class="hero__stat">
+            <span class="stat-label">输出格式</span>
+            <span class="stat-value">纯文本</span>
+          </div>
+        </div>
+      </header>
+
+      <section class="grid">
+        <div class="card">
+          <div class="card__header">
+            <h2>运行生成器</h2>
+            <p>编辑输入与配置，生成可播报脚本。</p>
+          </div>
+          <div class="card__body">
+            <label class="field">
+              <span>Config (JSON)</span>
+              <textarea id="config-input" spellcheck="false"></textarea>
+            </label>
+            <label class="field">
+              <span>Inputs (JSON)</span>
+              <textarea id="inputs-input" spellcheck="false"></textarea>
+            </label>
+            <button id="run-btn" class="btn">生成播报稿</button>
+          </div>
+        </div>
+
+        <div class="card card--output">
+          <div class="card__header">
+            <h2>生成结果</h2>
+            <p>输出为纯文本，可直接送入 TTS。</p>
+          </div>
+          <div class="card__body">
+            <pre id="output" class="output"></pre>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

@@ -42,6 +42,7 @@ live_design! {
     use mofa_settings::screen::SettingsScreen;
     use mofa_debate::screen::design::MoFaDebateScreen;
     use mofa_webview_demo::screen::WebViewDemoScreen;
+    use mofa_personal_news::screen::PersonalNewsScreen;
     use crate::widgets::tabs::TabWidget;
     use crate::widgets::tabs::TabBar;
 
@@ -367,6 +368,11 @@ live_design! {
                         }
 
                         webview_demo_page = <WebViewDemoScreen> {
+                            width: Fill, height: Fill
+                            visible: false
+                        }
+
+                        personal_news_page = <PersonalNewsScreen> {
                             width: Fill, height: Fill
                             visible: false
                         }

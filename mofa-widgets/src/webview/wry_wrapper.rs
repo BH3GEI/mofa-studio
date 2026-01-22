@@ -210,6 +210,23 @@ impl ManagedWebView {
         Ok(())
     }
 
+    /// Go back in navigation history
+    pub fn go_back(&self) -> Result<(), WebViewError> {
+        // Use JavaScript history API since wry doesn't expose direct back/forward
+        self.eval("history.back()")
+    }
+
+    /// Go forward in navigation history
+    pub fn go_forward(&self) -> Result<(), WebViewError> {
+        // Use JavaScript history API since wry doesn't expose direct back/forward
+        self.eval("history.forward()")
+    }
+
+    /// Reload the current page
+    pub fn reload(&self) -> Result<(), WebViewError> {
+        self.eval("location.reload()")
+    }
+
     /// Set visibility
     pub fn set_visible(&mut self, visible: bool) -> Result<(), WebViewError> {
         if let Some(ref webview) = self.webview {

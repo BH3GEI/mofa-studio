@@ -241,6 +241,13 @@ live_design! {
                 }
             }
 
+            personal_news_tab = <SidebarMenuButton> {
+                text: "Personal News"
+                draw_icon: {
+                    svg_file: dep("crate://self/resources/icons/app.svg")
+                }
+            }
+
             // Apps container - height Fit so it adapts to content
             apps_wrapper = <View> {
                 width: Fill, height: Fit
@@ -328,6 +335,7 @@ pub enum SidebarSelection {
     MofaFM,
     Debate,
     WebViewDemo,
+    PersonalNews,
     App(usize), // 1-20
     Settings,
 }
@@ -499,6 +507,15 @@ impl Widget for Sidebar {
             self.handle_selection(cx, SidebarSelection::WebViewDemo);
         }
 
+        // Handle Personal News tab click
+        if self
+            .view
+            .button(ids!(main_content.personal_news_tab))
+            .clicked(actions)
+        {
+            self.handle_selection(cx, SidebarSelection::PersonalNews);
+        }
+
         // Handle Settings tab click
         if self.view.button(ids!(settings_tab)).clicked(actions) {
             self.handle_selection(cx, SidebarSelection::Settings);
@@ -607,6 +624,15 @@ impl Sidebar {
                     .button(ids!(main_content.apps_wrapper.apps_scroll.pinned_app_btn))
                     .set_visible(cx, false);
             }
+            SidebarSelection::PersonalNews => {
+                self.view
+                    .button(ids!(main_content.personal_news_tab))
+                    .apply_over(cx, live! { draw_bg: { selected: 1.0 } });
+                self.pinned_app_name = None;
+                self.view
+                    .button(ids!(main_content.apps_wrapper.apps_scroll.pinned_app_btn))
+                    .set_visible(cx, false);
+            }
             SidebarSelection::App(app_idx) => {
                 self.set_app_button_selected(cx, *app_idx, true);
 
@@ -666,6 +692,7 @@ impl Sidebar {
             ids!(main_content.mofa_fm_tab),
             ids!(main_content.debate_tab),
             ids!(main_content.webview_demo_tab),
+            ids!(main_content.personal_news_tab),
             ids!(settings_tab),
             ids!(main_content.apps_wrapper.apps_scroll.pinned_app_btn)
         );
@@ -1027,6 +1054,12 @@ impl SidebarRef {
                             .button(ids!(main_content.webview_demo_tab))
                             .apply_over(cx, live! { draw_bg: { selected: 1.0 } });
                     }
+                    SidebarSelection::PersonalNews => {
+                        inner
+                            .view
+                            .button(ids!(main_content.personal_news_tab))
+                            .apply_over(cx, live! { draw_bg: { selected: 1.0 } });
+                    }
                     SidebarSelection::App(app_idx) => {
                         inner.set_app_button_selected(cx, app_idx, true);
 
@@ -1098,6 +1131,15 @@ impl SidebarRef {
 
             // WebView Demo tab
             inner.view.button(ids!(main_content.webview_demo_tab)).apply_over(
+                cx,
+                live! {
+                    draw_bg: { dark_mode: (dark_mode) }
+                    draw_text: { dark_mode: (dark_mode) }
+                },
+            );
+
+            // Personal News tab
+            inner.view.button(ids!(main_content.personal_news_tab)).apply_over(
                 cx,
                 live! {
                     draw_bg: { dark_mode: (dark_mode) }

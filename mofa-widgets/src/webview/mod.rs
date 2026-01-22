@@ -233,6 +233,33 @@ impl WebViewContainer {
         }
     }
 
+    /// Go back in navigation history
+    pub fn go_back(&self) -> Result<(), WebViewError> {
+        if let Some(ref webview) = self.webview {
+            webview.go_back()
+        } else {
+            Err(WebViewError::NotInitialized)
+        }
+    }
+
+    /// Go forward in navigation history
+    pub fn go_forward(&self) -> Result<(), WebViewError> {
+        if let Some(ref webview) = self.webview {
+            webview.go_forward()
+        } else {
+            Err(WebViewError::NotInitialized)
+        }
+    }
+
+    /// Reload the current page
+    pub fn reload(&self) -> Result<(), WebViewError> {
+        if let Some(ref webview) = self.webview {
+            webview.reload()
+        } else {
+            Err(WebViewError::NotInitialized)
+        }
+    }
+
     /// Send a message to JavaScript
     pub fn send_to_js(&self, channel: &str, data: &str) -> Result<(), WebViewError> {
         if let Some(ref webview) = self.webview {
@@ -392,6 +419,33 @@ impl WebViewContainerRef {
     pub fn eval(&self, js: &str) -> Result<(), WebViewError> {
         if let Some(inner) = self.borrow() {
             inner.eval(js)
+        } else {
+            Err(WebViewError::NotInitialized)
+        }
+    }
+
+    /// Go back in navigation history
+    pub fn go_back(&self) -> Result<(), WebViewError> {
+        if let Some(inner) = self.borrow() {
+            inner.go_back()
+        } else {
+            Err(WebViewError::NotInitialized)
+        }
+    }
+
+    /// Go forward in navigation history
+    pub fn go_forward(&self) -> Result<(), WebViewError> {
+        if let Some(inner) = self.borrow() {
+            inner.go_forward()
+        } else {
+            Err(WebViewError::NotInitialized)
+        }
+    }
+
+    /// Reload the current page
+    pub fn reload(&self) -> Result<(), WebViewError> {
+        if let Some(inner) = self.borrow() {
+            inner.reload()
         } else {
             Err(WebViewError::NotInitialized)
         }

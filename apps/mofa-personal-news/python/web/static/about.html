@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>网站介绍 | Personal News Broadcast</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body data-page="about">
+    <main class="page">
+      <div class="topbar">
+        <div class="brand">Personal News</div>
+        <nav class="nav">
+          <a href="/docs.html">文档</a>
+          <a href="/run.html">快速运行</a>
+          <a href="/tests.html">测试</a>
+          <a class="active" href="/about.html">网站介绍</a>
+        </nav>
+      </div>
+
+      <header class="hero">
+        <div class="hero__text">
+          <p class="eyebrow">Reusable Prompt</p>
+          <h1>辅助网站生成 Prompt</h1>
+          <p class="lead">用于为每个应用快速搭建同款辅助网站。</p>
+        </div>
+        <div class="hero__panel">
+          <div class="hero__stat">
+            <span class="stat-label">页面结构</span>
+            <span class="stat-value">文档 / 运行 / 测试 / 介绍</span>
+          </div>
+          <div class="hero__stat">
+            <span class="stat-label">可复用</span>
+            <span class="stat-value">是</span>
+          </div>
+        </div>
+      </header>
+
+      <section class="card">
+        <div class="card__header">
+          <h2>Prompt</h2>
+          <p>复制后替换应用名与路径即可复用。</p>
+        </div>
+        <div class="card__body">
+          <pre class="output"><code>请为&lt;应用名&gt;创建一个本地“辅助网站”，用于开发过程的文档查阅、快速运行与测试。要求如下：
+
+1) 网站为四页结构，并提供顶部导航与首页入口：
+   - 文档页：读取并展示 README.md，支持 Markdown 渲染（标题、列表、代码块、行内代码）。
+   - 快速运行页：提供 JSON 编辑器输入 config 与 inputs，调用后端接口生成脚本并展示输出。
+   - 测试页：可编辑测试用例 JSON，并调用后端接口运行；展示通过/失败与原因。
+   - 网站介绍页：展示此 Prompt，便于未来复用。
+
+2) 后端使用 Python 标准库 HTTP 服务器：
+   - /api/readme 返回 README 内容。
+   - /api/generate 接收 {config, inputs}，返回 {script}。
+   - /api/run-tests 接收 {tests}（可选）；为空时运行内置样例测试。
+
+3) 前端要求：
+   - 无框架纯 HTML/CSS/JS。
+   - JSON 编辑区与输出区样式清晰，可复制。
+   - 页面视觉要有明确主题与层次，非默认样式；支持移动端。
+
+4) 说明文档：
+   - 在项目 README 增加启动方式与页面入口。
+   - 提供 web/README 说明使用方式与页面用途。
+
+请按上述结构创建页面与服务器文件，并保证默认样例可正常运行。</code></pre>
+        </div>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

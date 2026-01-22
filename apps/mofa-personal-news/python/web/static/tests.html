@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>测试 | Personal News Broadcast</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body data-page="tests">
+    <main class="page">
+      <div class="topbar">
+        <div class="brand">Personal News</div>
+        <nav class="nav">
+          <a href="/docs.html">文档</a>
+          <a href="/run.html">快速运行</a>
+          <a class="active" href="/tests.html">测试</a>
+          <a href="/about.html">网站介绍</a>
+        </nav>
+      </div>
+
+      <header class="hero">
+        <div class="hero__text">
+          <p class="eyebrow">Tests</p>
+          <h1>编辑并运行测试用例</h1>
+          <p class="lead">支持自定义断言与顺序校验，适合快速验证逻辑。</p>
+        </div>
+        <div class="hero__panel">
+          <div class="hero__stat">
+            <span class="stat-label">测试格式</span>
+            <span class="stat-value">JSON 列表</span>
+          </div>
+          <div class="hero__stat">
+            <span class="stat-label">断言类型</span>
+            <span class="stat-value">contains / not_contains / order</span>
+          </div>
+        </div>
+      </header>
+
+      <section class="grid">
+        <div class="card">
+          <div class="card__header">
+            <h2>测试用例</h2>
+            <p>编辑后运行，结果会显示在右侧。</p>
+          </div>
+          <div class="card__body">
+            <label class="field">
+              <span>Tests (JSON)</span>
+              <textarea id="tests-input" spellcheck="false"></textarea>
+            </label>
+            <button id="test-btn" class="btn">运行测试</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__header">
+            <h2>测试结果</h2>
+            <p>通过/失败与原因说明。</p>
+          </div>
+          <div class="card__body">
+            <ul id="test-results" class="results"></ul>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

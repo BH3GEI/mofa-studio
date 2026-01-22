@@ -1,0 +1,342 @@
+:root {
+  --bg: #f5efe6;
+  --ink: #231f20;
+  --muted: #6d5b4b;
+  --card: #fff7ef;
+  --accent: #d15a3c;
+  --accent-dark: #8f3a24;
+  --shadow: 0 24px 60px rgba(48, 27, 17, 0.18);
+  --radius: 22px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Avenir Next", "Gill Sans", "Trebuchet MS", sans-serif;
+  color: var(--ink);
+  background: radial-gradient(circle at top left, #fbe8d3 0%, var(--bg) 40%, #efe1d3 100%);
+  min-height: 100vh;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.brand {
+  font-family: "Baskerville", "Palatino Linotype", "Palatino", "Book Antiqua", serif;
+  font-size: 20px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.nav {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.nav a {
+  text-decoration: none;
+  color: var(--accent-dark);
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(143, 58, 36, 0.3);
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.nav a:hover,
+.nav a.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: transparent;
+}
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px 72px;
+  position: relative;
+}
+
+.page::before {
+  content: "";
+  position: absolute;
+  top: -120px;
+  right: -120px;
+  width: 320px;
+  height: 320px;
+  background: conic-gradient(from 180deg, rgba(209, 90, 60, 0.25), rgba(244, 169, 125, 0.2));
+  border-radius: 50%;
+  filter: blur(12px);
+  z-index: -1;
+  animation: float 12s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(18px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.hero {
+  display: grid;
+  gap: 28px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  align-items: center;
+  padding: 28px;
+  border-radius: var(--radius);
+  background: linear-gradient(120deg, #fff2e2 0%, #ffe9d2 55%, #fdd9c4 100%);
+  box-shadow: var(--shadow);
+  margin-bottom: 36px;
+  animation: reveal 0.8s ease-out both;
+}
+
+.hero__text h1 {
+  font-family: "Baskerville", "Palatino Linotype", "Palatino", "Book Antiqua", serif;
+  font-size: clamp(28px, 4vw, 44px);
+  margin: 0 0 12px;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  font-size: 12px;
+  margin: 0 0 10px;
+  color: var(--accent-dark);
+}
+
+.lead {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.hero__panel {
+  display: grid;
+  gap: 14px;
+}
+
+.hero__stat {
+  background: rgba(255, 255, 255, 0.7);
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(143, 58, 36, 0.2);
+}
+
+.stat-label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.stat-value {
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 22px;
+  margin-bottom: 26px;
+}
+
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 22px;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(35, 31, 32, 0.08);
+  animation: reveal 0.9s ease-out both;
+}
+
+.card__header h2 {
+  margin: 0 0 6px;
+  font-size: 22px;
+}
+
+.card__header p {
+  margin: 0 0 14px;
+  color: var(--muted);
+}
+
+.card__body {
+  display: grid;
+  gap: 14px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+textarea {
+  width: 100%;
+  min-height: 160px;
+  border-radius: 14px;
+  border: 1px solid rgba(35, 31, 32, 0.15);
+  padding: 12px;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 12px;
+  background: #fffdf8;
+  resize: vertical;
+}
+
+.btn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  padding: 12px 20px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 10px 20px rgba(209, 90, 60, 0.25);
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--accent-dark);
+  border: 1px solid rgba(209, 90, 60, 0.4);
+  box-shadow: none;
+}
+
+.output,
+.readme {
+  background: #fffdf8;
+  border-radius: 16px;
+  padding: 14px;
+  border: 1px solid rgba(35, 31, 32, 0.12);
+  font-size: 13px;
+  white-space: pre-wrap;
+  min-height: 220px;
+}
+
+.markdown {
+  background: #fffdf8;
+  border-radius: 16px;
+  padding: 18px;
+  border: 1px solid rgba(35, 31, 32, 0.12);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.markdown h1,
+.markdown h2,
+.markdown h3 {
+  font-family: "Baskerville", "Palatino Linotype", "Palatino", "Book Antiqua", serif;
+}
+
+.markdown pre {
+  background: #fff3e6;
+  padding: 12px;
+  border-radius: 12px;
+  overflow-x: auto;
+}
+
+.markdown code {
+  font-family: "Courier New", Courier, monospace;
+  background: rgba(209, 90, 60, 0.12);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.module-list {
+  display: grid;
+  gap: 12px;
+}
+
+.module-link {
+  background: rgba(209, 90, 60, 0.08);
+  border: 1px solid rgba(209, 90, 60, 0.3);
+  color: var(--accent-dark);
+  padding: 10px 14px;
+  border-radius: 12px;
+  text-align: left;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.module-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(209, 90, 60, 0.2);
+}
+
+.results {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.results li {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(35, 31, 32, 0.12);
+  background: #fff9f2;
+}
+
+.results li.pass {
+  border-color: rgba(19, 119, 62, 0.4);
+  background: rgba(42, 164, 90, 0.12);
+}
+
+.results li.fail {
+  border-color: rgba(176, 28, 28, 0.4);
+  background: rgba(227, 84, 84, 0.15);
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 720px) {
+  .page {
+    padding: 28px 16px 60px;
+  }
+
+  .topbar {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .hero {
+    padding: 22px;
+  }
+
+  textarea {
+    min-height: 140px;
+  }
+}

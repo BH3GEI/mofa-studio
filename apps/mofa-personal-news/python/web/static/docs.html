@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>文档 | Personal News Broadcast</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body data-page="docs">
+    <main class="page">
+      <div class="topbar">
+        <div class="brand">Personal News</div>
+        <nav class="nav">
+          <a class="active" href="/docs.html">文档</a>
+          <a href="/run.html">快速运行</a>
+          <a href="/tests.html">测试</a>
+          <a href="/about.html">网站介绍</a>
+        </nav>
+      </div>
+
+      <header class="hero">
+        <div class="hero__text">
+          <p class="eyebrow">Documentation</p>
+          <h1>README 文档</h1>
+          <p class="lead">支持 Markdown 展示，方便对齐规格与实现细节。</p>
+        </div>
+        <div class="hero__panel">
+          <div class="hero__stat">
+            <span class="stat-label">来源</span>
+            <span class="stat-value">README.md</span>
+          </div>
+          <div class="hero__stat">
+            <span class="stat-label">渲染</span>
+            <span class="stat-value">本地解析</span>
+          </div>
+        </div>
+      </header>
+
+      <section class="card">
+        <div class="card__header">
+          <h2>项目说明</h2>
+          <p>自动加载 `personal-news/README.md`。</p>
+        </div>
+        <div class="card__body">
+          <div id="readme" class="markdown" data-mode="markdown"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card__header">
+          <h2>子模块文档</h2>
+          <p>各子模块独立使用说明。</p>
+        </div>
+        <div class="card__body">
+          <div class="module-list">
+            <a class="module-link" href="/module-rss.html">RSS 模块</a>
+            <a class="module-link" href="/module-x.html">X 模块</a>
+            <a class="module-link" href="/module-weather.html">Weather 模块</a>
+            <a class="module-link" href="/module-editor.html">Editor 模块</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
