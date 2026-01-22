@@ -102,6 +102,8 @@ pub enum PageId {
     Settings,
     /// Generic app page (for demo apps)
     App,
+    /// WebView demo page
+    WebViewDemo,
 }
 
 impl PageId {
@@ -112,6 +114,7 @@ impl PageId {
             PageId::Debate => live_id!(debate_tab),
             PageId::Settings => live_id!(settings_tab),
             PageId::App => live_id!(app_tab),
+            PageId::WebViewDemo => live_id!(webview_demo_tab),
         }
     }
 
@@ -122,6 +125,7 @@ impl PageId {
             PageId::Debate => live_id!(debate_page),
             PageId::Settings => live_id!(settings_page),
             PageId::App => live_id!(app_page),
+            PageId::WebViewDemo => live_id!(webview_demo_page),
         }
     }
 }
@@ -141,7 +145,7 @@ impl PageRouter {
     pub fn new() -> Self {
         Self {
             current_page: Some(PageId::MofaFM), // Default to FM
-            pages: vec![PageId::MofaFM, PageId::Debate, PageId::Settings, PageId::App],
+            pages: vec![PageId::MofaFM, PageId::Debate, PageId::Settings, PageId::App, PageId::WebViewDemo],
         }
     }
 

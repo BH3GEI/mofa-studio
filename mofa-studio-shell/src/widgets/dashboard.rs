@@ -41,6 +41,7 @@ live_design! {
     use mofa_fm::screen::design::MoFaFMScreen;
     use mofa_settings::screen::SettingsScreen;
     use mofa_debate::screen::design::MoFaDebateScreen;
+    use mofa_webview_demo::screen::WebViewDemoScreen;
     use crate::widgets::tabs::TabWidget;
     use crate::widgets::tabs::TabBar;
 
@@ -361,6 +362,11 @@ live_design! {
                         }
 
                         settings_page = <SettingsScreen> {
+                            width: Fill, height: Fill
+                            visible: false
+                        }
+
+                        webview_demo_page = <WebViewDemoScreen> {
                             width: Fill, height: Fill
                             visible: false
                         }

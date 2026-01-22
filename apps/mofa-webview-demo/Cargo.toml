@@ -1,0 +1,9 @@
+[package]
+name = "mofa-webview-demo"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+makepad-widgets.workspace = true
+mofa-widgets = { path = "../../mofa-widgets" }
+log.workspace = true

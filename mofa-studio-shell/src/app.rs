@@ -34,9 +34,11 @@ pub fn get_cli_args() -> &'static Args {
 
 // App plugin system imports
 use mofa_widgets::{MofaApp, AppRegistry, TimerControl, PageRouter, PageId, tab_clicked};
+use mofa_widgets::webview::WebViewContainerWidgetRefExt;
 use mofa_fm::{MoFaFMApp, MoFaFMScreenWidgetRefExt};
 use mofa_debate::MoFaDebateApp;
 use mofa_settings::MoFaSettingsApp;
+use mofa_webview_demo::MoFaWebViewDemoApp;
 use mofa_settings::data::Preferences;
 use mofa_settings::screen::SettingsScreenWidgetRefExt;
 
@@ -391,6 +393,7 @@ impl LiveHook for App {
         self.app_registry.register(MoFaFMApp::info());
         self.app_registry.register(MoFaDebateApp::info());
         self.app_registry.register(MoFaSettingsApp::info());
+        self.app_registry.register(MoFaWebViewDemoApp::info());
 
         // Initialize page router (defaults to MoFA FM)
         self.page_router = PageRouter::new();
@@ -461,6 +464,7 @@ impl LiveRegister for App {
         <MoFaFMApp as MofaApp>::live_design(cx);
         <MoFaDebateApp as MofaApp>::live_design(cx);
         <MoFaSettingsApp as MofaApp>::live_design(cx);
+        <MoFaWebViewDemoApp as MofaApp>::live_design(cx);
 
         // Shell widgets (order matters - tabs before dashboard, apps before dashboard)
         mofa_studio_shell::widgets::sidebar::live_design(cx);
@@ -784,6 +788,12 @@ impl App {
             self.ui.mo_fa_fmscreen(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.fm_page)).stop_timers(cx);
         }
 
+        // Deactivate WebView when leaving WebView Demo page
+        if old_page == Some(PageId::WebViewDemo) {
+            self.ui.web_view_container(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.webview_demo_page.content.webview_area.webview_wrapper.webview))
+                .set_active(cx, false);
+        }
+
         // Update page visibility
         self.update_page_visibility(cx);
 
@@ -793,6 +803,12 @@ impl App {
         // Start timers on new page if it's FM
         if page == PageId::MofaFM {
             self.ui.mo_fa_fmscreen(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.fm_page)).start_timers(cx);
+        }
+
+        // Activate WebView when entering WebView Demo page
+        if page == PageId::WebViewDemo {
+            self.ui.web_view_container(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.webview_demo_page.content.webview_area.webview_wrapper.webview))
+                .set_active(cx, true);
         }
 
         self.ui.redraw(cx);
@@ -811,6 +827,8 @@ impl App {
             .apply_over(cx, live!{ visible: (current == Some(PageId::App)) });
         self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.settings_page))
             .apply_over(cx, live!{ visible: (current == Some(PageId::Settings)) });
+        self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.webview_demo_page))
+            .apply_over(cx, live!{ visible: (current == Some(PageId::WebViewDemo)) });
     }
 
     /// Update hero title panel with current app info
@@ -820,6 +838,7 @@ impl App {
             PageId::Debate => ("MoFA Debate", "Multi-agent debate and discussion platform"),
             PageId::Settings => ("Settings", "Configure providers and preferences"),
             PageId::App => ("Demo App", "Select an app from the sidebar"),
+            PageId::WebViewDemo => ("WebView Demo", "Demonstrates WebView embedding with wry"),
         };
 
         self.ui.label(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.hero_title_panel.title_container.app_title))

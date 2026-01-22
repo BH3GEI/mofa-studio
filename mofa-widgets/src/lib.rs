@@ -81,6 +81,7 @@ pub mod log_panel;
 pub mod participant_panel;
 pub mod theme;
 pub mod waveform_view;
+pub mod webview;
 
 // Re-export app trait types for convenience
 pub use app_trait::{AppInfo, AppRegistry, MofaApp, PageId, PageRouter, StateChangeListener, TimerControl, tab_clicked};
@@ -111,6 +112,7 @@ use makepad_widgets::Cx;
 /// 3. `participant_panel` - User panels with waveforms
 /// 4. `log_panel` - Log display
 /// 5. `led_gauge` - Level indicators
+/// 6. `webview` - WebView container for embedding web content
 pub fn live_design(cx: &mut Cx) {
     // Theme provides fonts and base styles - must be first
     theme::live_design(cx);
@@ -120,6 +122,7 @@ pub fn live_design(cx: &mut Cx) {
     participant_panel::live_design(cx);
     log_panel::live_design(cx);
     led_gauge::live_design(cx);
+    webview::live_design(cx);
 }
 
 // Re-export commonly used types
