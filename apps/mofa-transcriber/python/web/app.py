@@ -123,6 +123,108 @@ def summarize_text(text: str, api_key: Optional[str] = None) -> Optional[str]:
         return f"[Summary error: {e}]"
 
 
+def generate_podcast_script(text: str, api_key: Optional[str] = None, num_hosts: int = 2) -> Optional[Dict]:
+    """Generate a podcast script from text using OpenAI API."""
+    if not api_key:
+        api_key = os.environ.get("OPENAI_API_KEY")
+
+    if not api_key:
+        return {"error": "No API key provided. Set OPENAI_API_KEY or provide in request."}
+
+    try:
+        import openai
+        client = openai.OpenAI(api_key=api_key)
+
+        host_names = ["Host A", "Host B"] if num_hosts == 2 else ["Host A", "Host B", "Host C"]
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": f"""You are a podcast script writer. Convert the given content into an engaging podcast conversation between {num_hosts} hosts.
+
+Rules:
+1. Use exactly these host names: {', '.join(host_names)}
+2. Format each line as: "HostName: dialogue text"
+3. Make the conversation natural, engaging, and informative
+4. Include reactions, questions, and smooth transitions
+5. Keep the total script around 500-800 words
+6. Start with a brief introduction and end with a conclusion
+
+Example format:
+Host A: Welcome to today's episode! We have some fascinating content to discuss.
+Host B: Absolutely! I'm really excited about this topic."""
+                },
+                {
+                    "role": "user",
+                    "content": f"Please convert this content into a podcast script:\n\n{text[:6000]}"
+                }
+            ],
+            max_tokens=2000
+        )
+
+        script_text = response.choices[0].message.content
+
+        # Parse the script into segments
+        segments = []
+        for line in script_text.strip().split('\n'):
+            line = line.strip()
+            if ':' in line and any(line.startswith(h) for h in host_names):
+                parts = line.split(':', 1)
+                if len(parts) == 2:
+                    segments.append({
+                        "role": parts[0].strip(),
+                        "text": parts[1].strip()
+                    })
+
+        return {
+            "script": script_text,
+            "segments": segments,
+            "hosts": host_names
+        }
+    except ImportError:
+        return {"error": "openai package not installed. Please run: pip install openai"}
+    except Exception as e:
+        return {"error": f"Script generation error: {e}"}
+
+
+# macOS voice mapping
+MACOS_VOICES = {
+    "Host A": "Samantha",  # English female
+    "Host B": "Daniel",    # English male (British)
+    "Host C": "Alex",      # English male
+    "Ting-Ting": "Ting-Ting",  # Chinese female
+    "Mei-Jia": "Mei-Jia",      # Chinese female (Taiwan)
+}
+
+
+def speak_text_macos(text: str, voice: str = "Samantha", rate: int = 180) -> bool:
+    """Speak text using macOS say command."""
+    try:
+        cmd = ['say', '-v', voice, '-r', str(rate), text]
+        subprocess.run(cmd, check=True, timeout=120)
+        return True
+    except Exception as e:
+        print(f"TTS error: {e}")
+        return False
+
+
+def speak_script_async(segments: list, voice_mapping: Dict[str, str], rate: int = 180):
+    """Speak podcast script segments sequentially."""
+    for segment in segments:
+        role = segment.get("role", "Host A")
+        text = segment.get("text", "")
+        voice = voice_mapping.get(role, "Samantha")
+
+        if text:
+            speak_text_macos(text, voice, rate)
+
+
+# TTS state
+tts_state = {"speaking": False, "stop_requested": False}
+
+
 def process_job(job_id: str, file_path: str, model_size: str, api_key: Optional[str]):
     """Process a transcription job in background."""
     job = jobs[job_id]
@@ -217,8 +319,108 @@ class TranscriberHandler(SimpleHTTPRequestHandler):
 
         if parsed.path == "/api/transcribe":
             self._handle_transcribe()
+        elif parsed.path == "/api/generate-podcast":
+            self._handle_generate_podcast()
+        elif parsed.path == "/api/speak":
+            self._handle_speak()
+        elif parsed.path == "/api/stop-speak":
+            self._handle_stop_speak()
         else:
             self._json_response(404, {"error": "Not found"})
+
+    def _handle_generate_podcast(self):
+        """Handle podcast script generation."""
+        content_length = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(content_length)
+
+        try:
+            data = json.loads(body.decode("utf-8"))
+            text = data.get("text", "")
+            api_key = data.get("api_key") or os.environ.get("OPENAI_API_KEY")
+            num_hosts = data.get("num_hosts", 2)
+
+            if not text:
+                self._json_response(400, {"error": "No text provided"})
+                return
+
+            result = generate_podcast_script(text, api_key, num_hosts)
+            self._json_response(200, result)
+
+        except json.JSONDecodeError:
+            self._json_response(400, {"error": "Invalid JSON"})
+        except Exception as e:
+            self._json_response(500, {"error": str(e)})
+
+    def _handle_speak(self):
+        """Handle TTS request."""
+        content_length = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(content_length)
+
+        try:
+            data = json.loads(body.decode("utf-8"))
+            segments = data.get("segments", [])
+            voice_mapping = data.get("voice_mapping", {
+                "Host A": "Samantha",
+                "Host B": "Daniel",
+                "Host C": "Alex"
+            })
+            rate = data.get("rate", 180)
+
+            if not segments:
+                # Single text mode
+                text = data.get("text", "")
+                voice = data.get("voice", "Samantha")
+                if text:
+                    tts_state["speaking"] = True
+                    tts_state["stop_requested"] = False
+
+                    # Run in background thread
+                    def speak_single():
+                        speak_text_macos(text, voice, rate)
+                        tts_state["speaking"] = False
+
+                    thread = threading.Thread(target=speak_single)
+                    thread.start()
+                    self._json_response(200, {"status": "speaking"})
+                else:
+                    self._json_response(400, {"error": "No text or segments provided"})
+                return
+
+            # Segment mode - speak podcast script
+            tts_state["speaking"] = True
+            tts_state["stop_requested"] = False
+
+            def speak_all():
+                for segment in segments:
+                    if tts_state["stop_requested"]:
+                        break
+                    role = segment.get("role", "Host A")
+                    text = segment.get("text", "")
+                    voice = voice_mapping.get(role, "Samantha")
+                    if text:
+                        speak_text_macos(text, voice, rate)
+                tts_state["speaking"] = False
+
+            thread = threading.Thread(target=speak_all)
+            thread.start()
+
+            self._json_response(200, {"status": "speaking", "segment_count": len(segments)})
+
+        except json.JSONDecodeError:
+            self._json_response(400, {"error": "Invalid JSON"})
+        except Exception as e:
+            self._json_response(500, {"error": str(e)})
+
+    def _handle_stop_speak(self):
+        """Stop current TTS."""
+        tts_state["stop_requested"] = True
+        # Kill any running say process
+        try:
+            subprocess.run(['pkill', '-9', 'say'], capture_output=True)
+        except:
+            pass
+        tts_state["speaking"] = False
+        self._json_response(200, {"status": "stopped"})
 
     def _handle_transcribe(self):
         """Handle file upload and start transcription."""

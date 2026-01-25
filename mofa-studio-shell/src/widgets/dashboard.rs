@@ -44,6 +44,7 @@ live_design! {
     use mofa_webview_demo::screen::WebViewDemoScreen;
     use mofa_personal_news::screen::PersonalNewsScreen;
     use mofa_transcriber::screen::TranscriberScreen;
+    use mofa_podcast::screen::PodcastScreen;
     use crate::widgets::tabs::TabWidget;
     use crate::widgets::tabs::TabBar;
 
@@ -379,6 +380,11 @@ live_design! {
                         }
 
                         transcriber_page = <TranscriberScreen> {
+                            width: Fill, height: Fill
+                            visible: false
+                        }
+
+                        podcast_page = <PodcastScreen> {
                             width: Fill, height: Fill
                             visible: false
                         }

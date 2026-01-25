@@ -41,6 +41,7 @@ use mofa_settings::MoFaSettingsApp;
 use mofa_webview_demo::MoFaWebViewDemoApp;
 use mofa_personal_news::MoFaPersonalNewsApp;
 use mofa_transcriber::MoFaTranscriberApp;
+use mofa_podcast::MoFaPodcastApp;
 use mofa_settings::data::Preferences;
 use mofa_settings::screen::SettingsScreenWidgetRefExt;
 
@@ -398,6 +399,7 @@ impl LiveHook for App {
         self.app_registry.register(MoFaWebViewDemoApp::info());
         self.app_registry.register(MoFaPersonalNewsApp::info());
         self.app_registry.register(MoFaTranscriberApp::info());
+        self.app_registry.register(MoFaPodcastApp::info());
 
         // Initialize page router (defaults to MoFA FM)
         self.page_router = PageRouter::new();
@@ -471,6 +473,7 @@ impl LiveRegister for App {
         <MoFaWebViewDemoApp as MofaApp>::live_design(cx);
         <MoFaPersonalNewsApp as MofaApp>::live_design(cx);
         <MoFaTranscriberApp as MofaApp>::live_design(cx);
+        <MoFaPodcastApp as MofaApp>::live_design(cx);
 
         // Shell widgets (order matters - tabs before dashboard, apps before dashboard)
         mofa_studio_shell::widgets::sidebar::live_design(cx);
@@ -863,6 +866,8 @@ impl App {
             .apply_over(cx, live!{ visible: (current == Some(PageId::PersonalNews)) });
         self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.transcriber_page))
             .apply_over(cx, live!{ visible: (current == Some(PageId::Transcriber)) });
+        self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.podcast_page))
+            .apply_over(cx, live!{ visible: (current == Some(PageId::Podcast)) });
     }
 
     /// Update hero title panel with current app info
@@ -875,6 +880,7 @@ impl App {
             PageId::WebViewDemo => ("WebView Demo", "Demonstrates WebView embedding with wry"),
             PageId::PersonalNews => ("Personal News", "Personal news broadcast"),
             PageId::Transcriber => ("AI Transcriber", "Audio/video transcription and summarization"),
+            PageId::Podcast => ("Podcast Generator", "Generate podcast audio from scripts"),
         };
 
         self.ui.label(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.hero_title_panel.title_container.app_title))

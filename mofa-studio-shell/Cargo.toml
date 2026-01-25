@@ -4,13 +4,14 @@ version.workspace = true
 edition.workspace = true
 
 [features]
-default = ["mofa-fm", "mofa-settings", "mofa-debate", "mofa-webview-demo", "mofa-personal-news", "mofa-transcriber"]
+default = ["mofa-fm", "mofa-settings", "mofa-debate", "mofa-webview-demo", "mofa-personal-news", "mofa-transcriber", "mofa-podcast"]
 mofa-fm = ["dep:mofa-fm"]
 mofa-settings = ["dep:mofa-settings"]
 mofa-debate = ["dep:mofa-debate"]
 mofa-webview-demo = ["dep:mofa-webview-demo"]
 mofa-personal-news = ["dep:mofa-personal-news"]
 mofa-transcriber = ["dep:mofa-transcriber"]
+mofa-podcast = ["dep:mofa-podcast"]
 
 [dependencies]
 makepad-widgets.workspace = true
@@ -23,6 +24,7 @@ mofa-debate = { path = "../apps/mofa-debate", optional = true }
 mofa-webview-demo = { path = "../apps/mofa-webview-demo", optional = true }
 mofa-personal-news = { path = "../apps/mofa-personal-news", optional = true }
 mofa-transcriber = { path = "../apps/mofa-transcriber", optional = true }
+mofa-podcast = { path = "../apps/mofa-podcast", optional = true }
 
 # Audio
 cpal.workspace = true

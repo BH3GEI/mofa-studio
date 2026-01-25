@@ -1,0 +1,36 @@
+[package]
+name = "mofa-podcast"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+makepad-widgets.workspace = true
+mofa-widgets = { path = "../../mofa-widgets" }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Parsing
+regex = "1.10"
+
+# Error Handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Logging
+log.workspace = true
+
+# Date/Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Utilities
+uuid = { version = "1.6", features = ["v4", "serde"] }
+dirs.workspace = true
+
+# File Dialog
+rfd = "0.14"
+
+# Audio
+rodio = "0.19"
+hound = "3.5"
