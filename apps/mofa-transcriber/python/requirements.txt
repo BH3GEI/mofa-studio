@@ -1,0 +1,10 @@
+# AI Transcriber Dependencies
+
+# Whisper for transcription
+faster-whisper>=1.0.0
+
+# OpenAI for summarization
+openai>=1.0.0
+
+# Optional: for GPU acceleration (uncomment if using NVIDIA GPU)
+# ctranslate2[cuda]

@@ -155,6 +155,7 @@ impl ManagedWebView {
             .with_url(&self.config.url)
             .with_devtools(self.config.devtools)
             .with_transparent(self.config.transparent)
+            .with_clipboard(true)  // Enable clipboard (copy/paste)
             .with_ipc_handler(move |msg| {
                 let mut handler = ipc.lock();
                 handler.handle_message(IpcMessage::from_js(msg.body()));

@@ -43,6 +43,7 @@ live_design! {
     use mofa_debate::screen::design::MoFaDebateScreen;
     use mofa_webview_demo::screen::WebViewDemoScreen;
     use mofa_personal_news::screen::PersonalNewsScreen;
+    use mofa_transcriber::screen::TranscriberScreen;
     use crate::widgets::tabs::TabWidget;
     use crate::widgets::tabs::TabBar;
 
@@ -373,6 +374,11 @@ live_design! {
                         }
 
                         personal_news_page = <PersonalNewsScreen> {
+                            width: Fill, height: Fill
+                            visible: false
+                        }
+
+                        transcriber_page = <TranscriberScreen> {
                             width: Fill, height: Fill
                             visible: false
                         }

@@ -106,6 +106,8 @@ pub enum PageId {
     WebViewDemo,
     /// Personal News page
     PersonalNews,
+    /// AI Transcriber page
+    Transcriber,
 }
 
 impl PageId {
@@ -118,6 +120,7 @@ impl PageId {
             PageId::App => live_id!(app_tab),
             PageId::WebViewDemo => live_id!(webview_demo_tab),
             PageId::PersonalNews => live_id!(personal_news_tab),
+            PageId::Transcriber => live_id!(transcriber_tab),
         }
     }
 
@@ -130,6 +133,7 @@ impl PageId {
             PageId::App => live_id!(app_page),
             PageId::WebViewDemo => live_id!(webview_demo_page),
             PageId::PersonalNews => live_id!(personal_news_page),
+            PageId::Transcriber => live_id!(transcriber_page),
         }
     }
 }
@@ -149,7 +153,7 @@ impl PageRouter {
     pub fn new() -> Self {
         Self {
             current_page: Some(PageId::MofaFM), // Default to FM
-            pages: vec![PageId::MofaFM, PageId::Debate, PageId::Settings, PageId::App, PageId::WebViewDemo, PageId::PersonalNews],
+            pages: vec![PageId::MofaFM, PageId::Debate, PageId::Settings, PageId::App, PageId::WebViewDemo, PageId::PersonalNews, PageId::Transcriber],
         }
     }
 

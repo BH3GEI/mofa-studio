@@ -40,6 +40,7 @@ use mofa_debate::MoFaDebateApp;
 use mofa_settings::MoFaSettingsApp;
 use mofa_webview_demo::MoFaWebViewDemoApp;
 use mofa_personal_news::MoFaPersonalNewsApp;
+use mofa_transcriber::MoFaTranscriberApp;
 use mofa_settings::data::Preferences;
 use mofa_settings::screen::SettingsScreenWidgetRefExt;
 
@@ -396,6 +397,7 @@ impl LiveHook for App {
         self.app_registry.register(MoFaSettingsApp::info());
         self.app_registry.register(MoFaWebViewDemoApp::info());
         self.app_registry.register(MoFaPersonalNewsApp::info());
+        self.app_registry.register(MoFaTranscriberApp::info());
 
         // Initialize page router (defaults to MoFA FM)
         self.page_router = PageRouter::new();
@@ -468,6 +470,7 @@ impl LiveRegister for App {
         <MoFaSettingsApp as MofaApp>::live_design(cx);
         <MoFaWebViewDemoApp as MofaApp>::live_design(cx);
         <MoFaPersonalNewsApp as MofaApp>::live_design(cx);
+        <MoFaTranscriberApp as MofaApp>::live_design(cx);
 
         // Shell widgets (order matters - tabs before dashboard, apps before dashboard)
         mofa_studio_shell::widgets::sidebar::live_design(cx);
@@ -803,6 +806,12 @@ impl App {
                 .set_active(cx, false);
         }
 
+        // Deactivate WebView when leaving Transcriber page
+        if old_page == Some(PageId::Transcriber) {
+            self.ui.web_view_container(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.transcriber_page.content.webview_area.webview_wrapper.webview))
+                .set_active(cx, false);
+        }
+
         // Update page visibility
         self.update_page_visibility(cx);
 
@@ -826,6 +835,12 @@ impl App {
                 .set_active(cx, true);
         }
 
+        // Activate WebView when entering Transcriber page
+        if page == PageId::Transcriber {
+            self.ui.web_view_container(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.transcriber_page.content.webview_area.webview_wrapper.webview))
+                .set_active(cx, true);
+        }
+
         self.ui.redraw(cx);
     }
 
@@ -846,6 +861,8 @@ impl App {
             .apply_over(cx, live!{ visible: (current == Some(PageId::WebViewDemo)) });
         self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.personal_news_page))
             .apply_over(cx, live!{ visible: (current == Some(PageId::PersonalNews)) });
+        self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.transcriber_page))
+            .apply_over(cx, live!{ visible: (current == Some(PageId::Transcriber)) });
     }
 
     /// Update hero title panel with current app info
@@ -857,6 +874,7 @@ impl App {
             PageId::App => ("Demo App", "Select an app from the sidebar"),
             PageId::WebViewDemo => ("WebView Demo", "Demonstrates WebView embedding with wry"),
             PageId::PersonalNews => ("Personal News", "Personal news broadcast"),
+            PageId::Transcriber => ("AI Transcriber", "Audio/video transcription and summarization"),
         };
 
         self.ui.label(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.hero_title_panel.title_container.app_title))

@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Transcriber</title>
+    <style>
+        :root {
+            /* Dark mode colors (default) */
+            --bg-primary: #0f1115;
+            --bg-secondary: #1a1d24;
+            --bg-tertiary: #22252d;
+            --bg-input: #0f1115;
+            --text-primary: #e0e0e5;
+            --text-secondary: #888;
+            --text-muted: #666;
+            --border-color: #333;
+            --border-hover: #4a9eff;
+            --accent: #4a9eff;
+            --accent-gradient: linear-gradient(135deg, #4a9eff, #3b82f6);
+            --success: #4ade80;
+            --error: #ef4444;
+            --scrollbar-track: #1a1d24;
+            --scrollbar-thumb: #333;
+        }
+
+        .light-mode {
+            --bg-primary: #f5f6f8;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f0f1f3;
+            --bg-input: #ffffff;
+            --text-primary: #1a1d24;
+            --text-secondary: #666;
+            --text-muted: #999;
+            --border-color: #ddd;
+            --border-hover: #3b82f6;
+            --scrollbar-track: #f0f1f3;
+            --scrollbar-thumb: #ccc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 20px;
+            background: var(--bg-secondary);
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--border-hover);
+            background: rgba(74, 158, 255, 0.05);
+        }
+
+        .upload-area.has-file {
+            border-color: var(--success);
+            background: rgba(74, 222, 128, 0.05);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            color: var(--text-secondary);
+        }
+
+        .upload-text {
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .upload-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .file-name {
+            margin-top: 12px;
+            padding: 8px 16px;
+            background: var(--bg-primary);
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        /* Options */
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .option-group {
+            background: var(--bg-secondary);
+            padding: 16px;
+            border-radius: 8px;
+        }
+
+        .option-group label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .option-group select, .option-group input {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .option-group select:focus, .option-group input:focus {
+            outline: none;
+            border-color: var(--border-hover);
+        }
+
+        /* Button */
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--accent-gradient);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(74, 158, 255, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Progress */
+        .progress-section {
+            display: none;
+            margin-top: 24px;
+        }
+
+        .progress-section.active {
+            display: block;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent-gradient);
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        .progress-stage {
+            margin-top: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Results */
+        .results {
+            display: none;
+            margin-top: 24px;
+        }
+
+        .results.active {
+            display: block;
+        }
+
+        .result-section {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        .result-header {
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-header button {
+            padding: 6px 12px;
+            background: var(--border-color);
+            border: none;
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .result-header button:hover {
+            background: var(--text-muted);
+        }
+
+        .result-content {
+            padding: 16px;
+            font-size: 14px;
+            line-height: 1.6;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .result-meta {
+            padding: 12px 16px;
+            background: var(--bg-primary);
+            font-size: 12px;
+            color: var(--text-muted);
+            display: flex;
+            gap: 16px;
+        }
+
+        /* Error */
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--error);
+            color: var(--error);
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 16px;
+            display: none;
+        }
+
+        .error.active {
+            display: block;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--scrollbar-track);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-thumb);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        @media (max-width: 600px) {
+            .options {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Transcriber</h1>
+        <p class="subtitle">Upload audio or video files for transcription and AI summary</p>
+
+        <!-- Upload Area -->
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">[ Audio ]</div>
+            <div class="upload-text">Drop file here or click to upload</div>
+            <div class="upload-hint">Supports MP3, WAV, M4A, MP4, MKV, AVI, MOV and more</div>
+            <div class="file-name" id="fileName" style="display: none;"></div>
+        </div>
+        <input type="file" id="fileInput" accept="audio/*,video/*" style="display: none;">
+
+        <!-- Options -->
+        <div class="options">
+            <div class="option-group">
+                <label>Whisper Model</label>
+                <select id="modelSelect">
+                    <option value="tiny">Tiny (fastest, least accurate)</option>
+                    <option value="base" selected>Base (balanced)</option>
+                    <option value="small">Small (better accuracy)</option>
+                    <option value="medium">Medium (high accuracy)</option>
+                    <option value="large-v3">Large (best accuracy, slowest)</option>
+                </select>
+            </div>
+            <div class="option-group">
+                <label>OpenAI API Key (for summary)</label>
+                <input type="password" id="apiKey" placeholder="sk-... (optional, uses env var if empty)">
+            </div>
+        </div>
+
+        <!-- Transcribe Button -->
+        <button class="btn" id="transcribeBtn" disabled>Select a file to transcribe</button>
+
+        <!-- Progress -->
+        <div class="progress-section" id="progressSection">
+            <div class="progress-header">
+                <span>Processing...</span>
+                <span id="progressPercent">0%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+            <div class="progress-stage" id="progressStage">Initializing...</div>
+        </div>
+
+        <!-- Error -->
+        <div class="error" id="errorBox"></div>
+
+        <!-- Results -->
+        <div class="results" id="resultsSection">
+            <div class="result-section">
+                <div class="result-header">
+                    <span>Summary</span>
+                    <button onclick="copyText('summaryText')">Copy</button>
+                </div>
+                <div class="result-content" id="summaryText"></div>
+            </div>
+
+            <div class="result-section">
+                <div class="result-header">
+                    <span>Full Transcript</span>
+                    <button onclick="copyText('transcriptText')">Copy</button>
+                </div>
+                <div class="result-content" id="transcriptText"></div>
+                <div class="result-meta" id="transcriptMeta"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileName = document.getElementById('fileName');
+        const transcribeBtn = document.getElementById('transcribeBtn');
+        const progressSection = document.getElementById('progressSection');
+        const progressFill = document.getElementById('progressFill');
+        const progressPercent = document.getElementById('progressPercent');
+        const progressStage = document.getElementById('progressStage');
+        const resultsSection = document.getElementById('resultsSection');
+        const errorBox = document.getElementById('errorBox');
+
+        let selectedFile = null;
+        let currentJobId = null;
+
+        // Theme switching
+        function setDarkMode(isDark) {
+            if (isDark) {
+                document.body.classList.remove('light-mode');
+            } else {
+                document.body.classList.add('light-mode');
+            }
+        }
+
+        // Listen for theme change from parent (Makepad)
+        window.setTheme = function(darkMode) {
+            setDarkMode(darkMode > 0.5);
+        };
+
+        // File selection
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            selectedFile = file;
+            fileName.textContent = file.name + ' (' + formatSize(file.size) + ')';
+            fileName.style.display = 'inline-block';
+            uploadArea.classList.add('has-file');
+            transcribeBtn.disabled = false;
+            transcribeBtn.textContent = 'Start Transcription';
+            hideError();
+            resultsSection.classList.remove('active');
+        }
+
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        // Transcription
+        transcribeBtn.addEventListener('click', startTranscription);
+
+        async function startTranscription() {
+            if (!selectedFile) return;
+
+            transcribeBtn.disabled = true;
+            transcribeBtn.textContent = 'Processing...';
+            progressSection.classList.add('active');
+            resultsSection.classList.remove('active');
+            hideError();
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('model', document.getElementById('modelSelect').value);
+
+            const apiKey = document.getElementById('apiKey').value;
+            if (apiKey) {
+                formData.append('api_key', apiKey);
+            }
+
+            try {
+                const response = await fetch('/api/transcribe', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    showError(data.error);
+                    resetUI();
+                    return;
+                }
+
+                currentJobId = data.job_id;
+                pollStatus();
+
+            } catch (err) {
+                showError('Failed to start transcription: ' + err.message);
+                resetUI();
+            }
+        }
+
+        async function pollStatus() {
+            if (!currentJobId) return;
+
+            try {
+                const response = await fetch(`/api/status?id=${currentJobId}`);
+                const job = await response.json();
+
+                if (job.error && job.status === 'error') {
+                    showError(job.error);
+                    resetUI();
+                    return;
+                }
+
+                // Update progress
+                progressFill.style.width = job.progress + '%';
+                progressPercent.textContent = job.progress + '%';
+                progressStage.textContent = job.stage || 'Processing...';
+
+                if (job.status === 'completed') {
+                    showResults(job);
+                    resetUI();
+                } else if (job.status !== 'error') {
+                    setTimeout(pollStatus, 500);
+                }
+
+            } catch (err) {
+                showError('Failed to get status: ' + err.message);
+                resetUI();
+            }
+        }
+
+        function showResults(job) {
+            resultsSection.classList.add('active');
+            progressSection.classList.remove('active');
+
+            document.getElementById('summaryText').textContent = job.summary || 'No summary available';
+            document.getElementById('transcriptText').textContent = job.transcription?.text || 'No transcript available';
+
+            const meta = job.transcription;
+            if (meta) {
+                document.getElementById('transcriptMeta').innerHTML = `
+                    <span>Language: ${meta.language || 'unknown'}</span>
+                    <span>Duration: ${formatDuration(meta.duration)}</span>
+                    <span>Confidence: ${((meta.language_probability || 0) * 100).toFixed(1)}%</span>
+                `;
+            }
+        }
+
+        function formatDuration(seconds) {
+            if (!seconds) return 'unknown';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function resetUI() {
+            transcribeBtn.disabled = false;
+            transcribeBtn.textContent = 'Start Transcription';
+        }
+
+        function showError(msg) {
+            errorBox.textContent = msg;
+            errorBox.classList.add('active');
+        }
+
+        function hideError() {
+            errorBox.classList.remove('active');
+        }
+
+        function copyText(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                // Could show a toast here
+                console.log('Copied to clipboard');
+            });
+        }
+    </script>
+</body>
+</html>
