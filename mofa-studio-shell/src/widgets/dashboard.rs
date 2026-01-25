@@ -45,6 +45,7 @@ live_design! {
     use mofa_personal_news::screen::PersonalNewsScreen;
     use mofa_transcriber::screen::TranscriberScreen;
     use mofa_podcast::screen::PodcastScreen;
+    use mofa_podcast_factory::screen::PodcastFactoryScreen;
     use crate::widgets::tabs::TabWidget;
     use crate::widgets::tabs::TabBar;
 
@@ -385,6 +386,11 @@ live_design! {
                         }
 
                         podcast_page = <PodcastScreen> {
+                            width: Fill, height: Fill
+                            visible: false
+                        }
+
+                        podcast_factory_page = <PodcastFactoryScreen> {
                             width: Fill, height: Fill
                             visible: false
                         }

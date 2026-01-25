@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Podcast Factory</title>
+    <style>
+        :root {
+            --bg-primary: #0f1115;
+            --bg-secondary: #1a1d24;
+            --bg-tertiary: #22252d;
+            --bg-input: #0f1115;
+            --text-primary: #e0e0e5;
+            --text-secondary: #888;
+            --text-muted: #666;
+            --border-color: #333;
+            --border-hover: #4a9eff;
+            --accent: #4a9eff;
+            --accent-gradient: linear-gradient(135deg, #4a9eff, #3b82f6);
+            --success: #22c55e;
+            --error: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        .light-mode {
+            --bg-primary: #f5f6f8;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f0f1f3;
+            --bg-input: #ffffff;
+            --text-primary: #1a1d24;
+            --text-secondary: #666;
+            --text-muted: #999;
+            --border-color: #ddd;
+            --border-hover: #3b82f6;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container { max-width: 1000px; margin: 0 auto; }
+
+        h1 { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+        h2 { font-size: 18px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary); }
+        h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-secondary); }
+
+        .subtitle { color: var(--text-secondary); font-size: 14px; margin-bottom: 24px; }
+
+        /* Steps indicator */
+        .steps {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 24px;
+        }
+
+        .step {
+            flex: 1;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .step.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .step.completed {
+            background: var(--success);
+            color: white;
+        }
+
+        .step-num {
+            display: block;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        /* Panels */
+        .panel {
+            display: none;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .panel.active { display: block; }
+
+        /* Form elements */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--border-hover);
+        }
+
+        textarea {
+            min-height: 200px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--accent-gradient);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(74, 158, 255, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        /* Persona cards */
+        .personas {
+            display: grid;
+            gap: 12px;
+        }
+
+        .persona-card {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .persona-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .persona-header input {
+            width: 150px;
+            font-weight: 600;
+        }
+
+        .persona-fields {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 12px;
+        }
+
+        .btn-remove {
+            background: var(--error);
+            color: white;
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+
+        .btn-add {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 2px dashed var(--border-color);
+            color: var(--text-muted);
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .btn-add:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Outline display */
+        .outline-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .episode-card {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .episode-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .episode-num {
+            background: var(--accent);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .episode-title {
+            font-weight: 600;
+            flex: 1;
+            margin-left: 12px;
+        }
+
+        .episode-duration {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .episode-theme {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .episode-points {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .episode-points li {
+            margin-left: 16px;
+            margin-bottom: 2px;
+        }
+
+        .episode-status {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .status-pending { background: var(--bg-input); color: var(--text-muted); }
+        .status-generating { background: var(--warning); color: white; }
+        .status-done { background: var(--success); color: white; }
+
+        /* Progress */
+        .progress-section {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--bg-input);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent-gradient);
+            transition: width 0.3s;
+        }
+
+        /* Error */
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--error);
+            color: var(--error);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .error.active { display: block; }
+
+        /* Voice preview */
+        .voice-preview {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .voice-preview select {
+            flex: 1;
+        }
+
+        .btn-preview {
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-tertiary); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+
+        /* File upload */
+        .file-upload {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 12px;
+        }
+
+        .file-upload:hover, .file-upload.dragover {
+            border-color: var(--accent);
+            background: rgba(74, 158, 255, 0.05);
+        }
+
+        .file-upload-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .file-upload-text {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .file-upload-formats {
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .file-upload input[type="file"] {
+            display: none;
+        }
+
+        .file-info {
+            display: none;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+        }
+
+        .file-info.active {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .file-info-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .file-icon {
+            font-size: 24px;
+        }
+
+        .file-name {
+            font-weight: 500;
+        }
+
+        .file-stats {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .btn-clear {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 4px 12px;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-clear:hover {
+            border-color: var(--error);
+            color: var(--error);
+        }
+
+        .content-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .content-tab {
+            padding: 8px 16px;
+            background: var(--bg-tertiary);
+            border: none;
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .content-tab.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .content-mode {
+            display: none;
+        }
+
+        .content-mode.active {
+            display: block;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--text-muted);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Podcast Factory</h1>
+        <p class="subtitle">Transform books into multi-episode podcast series</p>
+
+        <!-- Steps -->
+        <div class="steps">
+            <div class="step active" data-step="1">
+                <span class="step-num">1</span>
+                Content
+            </div>
+            <div class="step" data-step="2">
+                <span class="step-num">2</span>
+                Settings
+            </div>
+            <div class="step" data-step="3">
+                <span class="step-num">3</span>
+                Personas
+            </div>
+            <div class="step" data-step="4">
+                <span class="step-num">4</span>
+                Outline
+            </div>
+            <div class="step" data-step="5">
+                <span class="step-num">5</span>
+                Generate
+            </div>
+        </div>
+
+        <div class="error" id="errorBox"></div>
+
+        <!-- Step 1: Content -->
+        <div class="panel active" id="panel1">
+            <h2>Book Content</h2>
+            <div class="form-group">
+                <label>Project Name</label>
+                <input type="text" id="projectName" placeholder="My Podcast Series">
+            </div>
+
+            <div class="form-group">
+                <label>Import book content</label>
+                <div class="content-tabs">
+                    <button class="content-tab active" onclick="switchContentMode('upload')">Upload File</button>
+                    <button class="content-tab" onclick="switchContentMode('paste')">Paste Text</button>
+                </div>
+
+                <!-- File upload mode -->
+                <div class="content-mode active" id="uploadMode">
+                    <div class="file-info" id="fileInfo">
+                        <div class="file-info-left">
+                            <span class="file-icon">📄</span>
+                            <div>
+                                <div class="file-name" id="fileName">book.txt</div>
+                                <div class="file-stats" id="fileStats">0 characters, 0 words</div>
+                            </div>
+                        </div>
+                        <button class="btn-clear" onclick="clearFile()">Clear</button>
+                    </div>
+                    <div class="file-upload" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                        <div class="file-upload-icon">📚</div>
+                        <div class="file-upload-text">Drop a book file here or click to upload</div>
+                        <div class="file-upload-formats" id="supportedFormats">Supported: .txt, .pdf, .epub</div>
+                        <input type="file" id="fileInput" accept=".txt,.pdf,.epub" onchange="handleFileSelect(event)">
+                    </div>
+                </div>
+
+                <!-- Paste mode -->
+                <div class="content-mode" id="pasteMode">
+                    <textarea id="bookContent" placeholder="Paste the book text, chapter summaries, or key points here..."></textarea>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>OpenAI API Key</label>
+                <input type="password" id="apiKey" placeholder="sk-... (or set OPENAI_API_KEY env var)">
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="nextStep()">Next: Settings</button>
+            </div>
+        </div>
+
+        <!-- Step 2: Settings -->
+        <div class="panel" id="panel2">
+            <h2>Series Settings</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Number of Episodes</label>
+                    <select id="numEpisodes">
+                        <option value="3">3 Episodes</option>
+                        <option value="5">5 Episodes</option>
+                        <option value="10" selected>10 Episodes</option>
+                        <option value="15">15 Episodes</option>
+                        <option value="20">20 Episodes</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Style</label>
+                    <select id="style">
+                        <option value="conversational">Conversational (casual chat)</option>
+                        <option value="educational">Educational (teaching focus)</option>
+                        <option value="storytelling">Storytelling (narrative)</option>
+                        <option value="debate">Debate (different viewpoints)</option>
+                        <option value="interview">Interview (Q&A format)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Speech Rate</label>
+                <select id="speechRate">
+                    <option value="150">Slow</option>
+                    <option value="180" selected>Normal</option>
+                    <option value="220">Fast</option>
+                </select>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="prevStep()">Back</button>
+                <button class="btn btn-primary" onclick="nextStep()">Next: Personas</button>
+            </div>
+        </div>
+
+        <!-- Step 3: Personas -->
+        <div class="panel" id="panel3">
+            <h2>Define Characters</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 13px;">
+                Define the hosts/characters for your podcast. Each will have their own voice.
+            </p>
+            <div class="personas" id="personasList">
+                <!-- Populated by JS -->
+            </div>
+            <button class="btn-add" onclick="addPersona()">+ Add Character</button>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="prevStep()">Back</button>
+                <button class="btn btn-primary" onclick="createProjectAndGenerateOutline()">Generate Outline</button>
+            </div>
+        </div>
+
+        <!-- Step 4: Outline -->
+        <div class="panel" id="panel4">
+            <h2>Episode Outline</h2>
+            <div class="progress-section" id="outlineProgress" style="display: none;">
+                <div>Generating outline...</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 50%"></div>
+                </div>
+            </div>
+            <div class="outline-list" id="outlineList">
+                <!-- Populated by JS -->
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="prevStep()">Back</button>
+                <button class="btn btn-primary" onclick="nextStep()">Next: Generate</button>
+            </div>
+        </div>
+
+        <!-- Step 5: Generate -->
+        <div class="panel" id="panel5">
+            <h2>Generate Episodes</h2>
+            <div class="output-info" id="outputInfo" style="display: none; background: var(--bg-tertiary); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">Output Directory</div>
+                        <div id="outputPath" style="font-family: monospace; font-size: 13px; word-break: break-all;"></div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="openOutputFolder()" style="white-space: nowrap; margin-left: 12px;">Open Folder</button>
+                </div>
+            </div>
+            <div class="progress-section" id="generateProgress" style="display: none;">
+                <div id="generateStatus">Generating...</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="generateFill" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="outline-list" id="episodesList">
+                <!-- Populated by JS -->
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="prevStep()">Back</button>
+                <button class="btn btn-success" id="generateAllBtn" onclick="generateAll()">Generate All Episodes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        let projectId = null;
+        let outline = null;
+        let uploadedContent = null;  // Store uploaded file content
+        let uploadedFilename = null;
+        let contentMode = 'upload';  // 'upload' or 'paste'
+        let personas = [
+            { name: "Host A", personality: "Curious and engaging podcast host who asks insightful questions", voice: "Samantha" },
+            { name: "Host B", personality: "Knowledgeable expert who provides deep insights and explanations", voice: "Daniel" }
+        ];
+
+        const VOICES = [
+            { id: "Samantha", label: "Samantha (English Female)" },
+            { id: "Daniel", label: "Daniel (British Male)" },
+            { id: "Alex", label: "Alex (English Male)" },
+            { id: "Ting-Ting", label: "Ting-Ting (Chinese Female)" },
+            { id: "Mei-Jia", label: "Mei-Jia (Chinese Female)" }
+        ];
+
+        // Theme
+        window.setTheme = function(darkMode) {
+            if (darkMode > 0.5) {
+                document.body.classList.remove('light-mode');
+            } else {
+                document.body.classList.add('light-mode');
+            }
+        };
+
+        // Content mode switching
+        function switchContentMode(mode) {
+            contentMode = mode;
+            document.querySelectorAll('.content-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.content-mode').forEach(m => m.classList.remove('active'));
+
+            if (mode === 'upload') {
+                document.querySelector('.content-tab:nth-child(1)').classList.add('active');
+                document.getElementById('uploadMode').classList.add('active');
+            } else {
+                document.querySelector('.content-tab:nth-child(2)').classList.add('active');
+                document.getElementById('pasteMode').classList.add('active');
+            }
+        }
+
+        // File upload handling
+        async function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            await uploadFile(file);
+        }
+
+        async function uploadFile(file) {
+            const dropZone = document.getElementById('dropZone');
+            const fileInfo = document.getElementById('fileInfo');
+
+            // Show loading
+            dropZone.innerHTML = `
+                <div class="file-upload-icon"><span class="loading-spinner"></span></div>
+                <div class="file-upload-text">Processing ${file.name}...</div>
+            `;
+
+            try {
+                // Read file as base64
+                const base64 = await readFileAsBase64(file);
+
+                // Send to server for parsing
+                const res = await fetch('/api/upload-book', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        filename: file.name,
+                        data: base64
+                    })
+                });
+
+                const data = await res.json();
+
+                if (data.error) {
+                    showError(data.error);
+                    resetDropZone();
+                    return;
+                }
+
+                // Success - store content
+                uploadedContent = data.content;
+                uploadedFilename = file.name;
+
+                // Update UI
+                document.getElementById('fileName').textContent = file.name;
+                document.getElementById('fileStats').textContent =
+                    `${data.char_count.toLocaleString()} characters, ${data.word_count.toLocaleString()} words`;
+                fileInfo.classList.add('active');
+                dropZone.style.display = 'none';
+
+                hideError();
+
+            } catch (e) {
+                showError('Failed to upload file: ' + e.message);
+                resetDropZone();
+            }
+        }
+
+        function readFileAsBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    // Remove data URL prefix
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function clearFile() {
+            uploadedContent = null;
+            uploadedFilename = null;
+            document.getElementById('fileInfo').classList.remove('active');
+            document.getElementById('fileInput').value = '';
+            resetDropZone();
+        }
+
+        function resetDropZone() {
+            const dropZone = document.getElementById('dropZone');
+            dropZone.style.display = 'block';
+            dropZone.innerHTML = `
+                <div class="file-upload-icon">📚</div>
+                <div class="file-upload-text">Drop a book file here or click to upload</div>
+                <div class="file-upload-formats" id="supportedFormats">Supported: .txt, .pdf, .epub</div>
+                <input type="file" id="fileInput" accept=".txt,.pdf,.epub" onchange="handleFileSelect(event)">
+            `;
+        }
+
+        // Drag and drop
+        function initDragDrop() {
+            const dropZone = document.getElementById('dropZone');
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+            });
+
+            dropZone.addEventListener('drop', handleDrop, false);
+        }
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function handleDrop(e) {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                uploadFile(files[0]);
+            }
+        }
+
+        // Get content (from upload or paste)
+        function getBookContent() {
+            if (contentMode === 'upload' && uploadedContent) {
+                return uploadedContent;
+            }
+            return document.getElementById('bookContent').value;
+        }
+
+        function getBookFilename() {
+            if (contentMode === 'upload' && uploadedFilename) {
+                return uploadedFilename;
+            }
+            return '';
+        }
+
+        // Check supported formats on load
+        async function checkSupportedFormats() {
+            try {
+                const res = await fetch('/api/formats');
+                const data = await res.json();
+                const formatsEl = document.getElementById('supportedFormats');
+                if (formatsEl) {
+                    formatsEl.textContent = 'Supported: ' + data.formats.join(', ');
+                }
+            } catch (e) {
+                console.log('Could not check formats');
+            }
+        }
+
+        // Steps navigation
+        function updateSteps() {
+            document.querySelectorAll('.step').forEach((el, i) => {
+                el.classList.remove('active', 'completed');
+                if (i + 1 === currentStep) el.classList.add('active');
+                else if (i + 1 < currentStep) el.classList.add('completed');
+            });
+
+            document.querySelectorAll('.panel').forEach((el, i) => {
+                el.classList.toggle('active', i + 1 === currentStep);
+            });
+        }
+
+        function nextStep() {
+            if (currentStep < 5) {
+                currentStep++;
+                updateSteps();
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateSteps();
+            }
+        }
+
+        document.querySelectorAll('.step').forEach(el => {
+            el.addEventListener('click', () => {
+                const step = parseInt(el.dataset.step);
+                if (step <= currentStep || (projectId && step <= 5)) {
+                    currentStep = step;
+                    updateSteps();
+                }
+            });
+        });
+
+        // Personas
+        function renderPersonas() {
+            const container = document.getElementById('personasList');
+            container.innerHTML = personas.map((p, i) => `
+                <div class="persona-card">
+                    <div class="persona-header">
+                        <input type="text" value="${p.name}" onchange="personas[${i}].name = this.value" placeholder="Character name">
+                        ${personas.length > 1 ? `<button class="btn btn-remove" onclick="removePersona(${i})">Remove</button>` : ''}
+                    </div>
+                    <div class="persona-fields">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Personality / Role</label>
+                            <input type="text" value="${p.personality}" onchange="personas[${i}].personality = this.value" placeholder="Describe the character's personality">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Voice</label>
+                            <div class="voice-preview">
+                                <select onchange="personas[${i}].voice = this.value">
+                                    ${VOICES.map(v => `<option value="${v.id}" ${p.voice === v.id ? 'selected' : ''}>${v.label}</option>`).join('')}
+                                </select>
+                                <button class="btn btn-secondary btn-preview" onclick="previewVoice('${p.voice}')">Test</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addPersona() {
+            personas.push({
+                name: `Host ${String.fromCharCode(65 + personas.length)}`,
+                personality: "Supporting character",
+                voice: VOICES[personas.length % VOICES.length].id
+            });
+            renderPersonas();
+        }
+
+        function removePersona(index) {
+            personas.splice(index, 1);
+            renderPersonas();
+        }
+
+        async function previewVoice(voice) {
+            try {
+                await fetch('/api/preview-voice', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ voice, text: "Hello, this is a voice preview for the podcast." })
+                });
+            } catch (e) {
+                console.error('Preview error:', e);
+            }
+        }
+
+        // Project creation and outline
+        async function createProjectAndGenerateOutline() {
+            const name = document.getElementById('projectName').value || 'Untitled';
+            const content = getBookContent();
+            const filename = getBookFilename();
+            const apiKey = document.getElementById('apiKey').value;
+            const numEpisodes = parseInt(document.getElementById('numEpisodes').value);
+            const style = document.getElementById('style').value;
+
+            if (!content || !content.trim()) {
+                showError('Please upload a book file or paste content');
+                return;
+            }
+
+            hideError();
+
+            // Create project
+            try {
+                const createRes = await fetch('/api/create-project', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name,
+                        book_content: content,
+                        book_filename: filename,
+                        num_episodes: numEpisodes,
+                        style,
+                        personas
+                    })
+                });
+                const createData = await createRes.json();
+                if (createData.error) {
+                    showError(createData.error);
+                    return;
+                }
+                projectId = createData.project_id;
+            } catch (e) {
+                showError('Failed to create project: ' + e.message);
+                return;
+            }
+
+            // Move to outline step
+            currentStep = 4;
+            updateSteps();
+
+            // Show progress
+            document.getElementById('outlineProgress').style.display = 'block';
+            document.getElementById('outlineList').innerHTML = '';
+
+            // Generate outline
+            try {
+                const outlineRes = await fetch('/api/generate-outline', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project_id: projectId, api_key: apiKey })
+                });
+                const outlineData = await outlineRes.json();
+
+                document.getElementById('outlineProgress').style.display = 'none';
+
+                if (outlineData.error) {
+                    showError(outlineData.error);
+                    return;
+                }
+
+                outline = outlineData.outline;
+                renderOutline();
+
+                // Fetch project info to get output path
+                try {
+                    const projRes = await fetch(`/api/project?id=${projectId}`);
+                    const projData = await projRes.json();
+                    if (projData.dir) {
+                        showOutputPath(projData.dir);
+                    }
+                } catch (e) {
+                    console.log('Could not fetch project dir');
+                }
+            } catch (e) {
+                document.getElementById('outlineProgress').style.display = 'none';
+                showError('Failed to generate outline: ' + e.message);
+            }
+        }
+
+        function renderOutline() {
+            if (!outline || !outline.episodes) return;
+
+            const container = document.getElementById('outlineList');
+            container.innerHTML = outline.episodes.map(ep => `
+                <div class="episode-card">
+                    <div class="episode-header">
+                        <span class="episode-num">EP ${ep.episode}</span>
+                        <span class="episode-title">${ep.title}</span>
+                        <span class="episode-duration">${ep.duration_minutes || 15} min</span>
+                    </div>
+                    <div class="episode-theme">${ep.theme}</div>
+                    <ul class="episode-points">
+                        ${(ep.key_points || []).map(p => `<li>${p}</li>`).join('')}
+                    </ul>
+                </div>
+            `).join('');
+        }
+
+        function renderEpisodes() {
+            if (!outline || !outline.episodes) return;
+
+            const container = document.getElementById('episodesList');
+            container.innerHTML = outline.episodes.map(ep => `
+                <div class="episode-card" id="episode-card-${ep.episode}">
+                    <div class="episode-header">
+                        <span class="episode-num">EP ${ep.episode}</span>
+                        <span class="episode-title">${ep.title}</span>
+                        <span class="episode-duration">${ep.duration_minutes || 15} min</span>
+                    </div>
+                    <div class="episode-status">
+                        <span class="status-badge status-pending" id="status-${ep.episode}">Pending</span>
+                        <button class="btn btn-secondary" onclick="generateEpisode(${ep.episode})" id="gen-btn-${ep.episode}">Generate</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function generateEpisode(episodeNum) {
+            const apiKey = document.getElementById('apiKey').value;
+            const rate = parseInt(document.getElementById('speechRate').value);
+
+            const statusEl = document.getElementById(`status-${episodeNum}`);
+            const btnEl = document.getElementById(`gen-btn-${episodeNum}`);
+
+            statusEl.textContent = 'Generating...';
+            statusEl.className = 'status-badge status-generating';
+            btnEl.disabled = true;
+
+            try {
+                const res = await fetch('/api/generate-episode', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        project_id: projectId,
+                        episode_num: episodeNum,
+                        api_key: apiKey,
+                        generate_audio: true,
+                        rate
+                    })
+                });
+                const data = await res.json();
+
+                if (data.error) {
+                    statusEl.textContent = 'Error';
+                    statusEl.className = 'status-badge status-pending';
+                    btnEl.disabled = false;
+                    showError(data.error);
+                    return;
+                }
+
+                statusEl.textContent = 'Done';
+                statusEl.className = 'status-badge status-done';
+                btnEl.textContent = 'Regenerate';
+                btnEl.disabled = false;
+
+            } catch (e) {
+                statusEl.textContent = 'Error';
+                statusEl.className = 'status-badge status-pending';
+                btnEl.disabled = false;
+                showError('Generation failed: ' + e.message);
+            }
+        }
+
+        async function generateAll() {
+            const apiKey = document.getElementById('apiKey').value;
+            const progressEl = document.getElementById('generateProgress');
+            const statusEl = document.getElementById('generateStatus');
+            const fillEl = document.getElementById('generateFill');
+            const btn = document.getElementById('generateAllBtn');
+
+            progressEl.style.display = 'block';
+            btn.disabled = true;
+
+            // Mark all as generating
+            outline.episodes.forEach(ep => {
+                const s = document.getElementById(`status-${ep.episode}`);
+                if (s) {
+                    s.textContent = 'Queued';
+                    s.className = 'status-badge status-pending';
+                }
+            });
+
+            try {
+                const res = await fetch('/api/generate-all', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project_id: projectId, api_key: apiKey })
+                });
+                const data = await res.json();
+
+                if (data.error) {
+                    showError(data.error);
+                    btn.disabled = false;
+                    return;
+                }
+
+                // Poll for status
+                pollGenerationStatus();
+
+            } catch (e) {
+                showError('Failed to start generation: ' + e.message);
+                btn.disabled = false;
+                progressEl.style.display = 'none';
+            }
+        }
+
+        async function pollGenerationStatus() {
+            try {
+                const res = await fetch(`/api/project?id=${projectId}`);
+                const project = await res.json();
+
+                const statusEl = document.getElementById('generateStatus');
+                const fillEl = document.getElementById('generateFill');
+
+                if (project.status === 'completed') {
+                    statusEl.textContent = 'All episodes generated!';
+                    fillEl.style.width = '100%';
+                    document.getElementById('generateAllBtn').disabled = false;
+
+                    // Update all statuses
+                    Object.values(project.episodes || {}).forEach(ep => {
+                        const s = document.getElementById(`status-${ep.episode}`);
+                        if (s) {
+                            s.textContent = 'Done';
+                            s.className = 'status-badge status-done';
+                        }
+                    });
+                    return;
+                }
+
+                // Update current progress
+                statusEl.textContent = project.progress || 'Generating...';
+
+                if (project.current_episode) {
+                    const s = document.getElementById(`status-${project.current_episode}`);
+                    if (s) {
+                        s.textContent = 'Generating...';
+                        s.className = 'status-badge status-generating';
+                    }
+                }
+
+                // Update completed episodes
+                Object.values(project.episodes || {}).forEach(ep => {
+                    const s = document.getElementById(`status-${ep.episode}`);
+                    if (s && s.textContent !== 'Generating...') {
+                        s.textContent = 'Done';
+                        s.className = 'status-badge status-done';
+                    }
+                });
+
+                // Calculate progress
+                const done = Object.keys(project.episodes || {}).length;
+                const total = outline.episodes.length;
+                fillEl.style.width = `${(done / total) * 100}%`;
+
+                setTimeout(pollGenerationStatus, 2000);
+
+            } catch (e) {
+                console.error('Poll error:', e);
+                setTimeout(pollGenerationStatus, 3000);
+            }
+        }
+
+        // Move to generate step
+        document.querySelectorAll('.step')[4].addEventListener('click', () => {
+            if (outline) {
+                renderEpisodes();
+            }
+        });
+
+        // Also render when clicking next from outline
+        const origNextStep = nextStep;
+        nextStep = function() {
+            origNextStep();
+            if (currentStep === 5 && outline) {
+                renderEpisodes();
+            }
+        };
+
+        // Error handling
+        function showError(msg) {
+            const el = document.getElementById('errorBox');
+            el.textContent = msg;
+            el.classList.add('active');
+        }
+
+        function hideError() {
+            document.getElementById('errorBox').classList.remove('active');
+        }
+
+        // Output folder
+        let projectDir = null;
+
+        function showOutputPath(path) {
+            projectDir = path;
+            document.getElementById('outputPath').textContent = path;
+            document.getElementById('outputInfo').style.display = 'block';
+        }
+
+        async function openOutputFolder() {
+            if (!projectDir) return;
+            try {
+                await fetch('/api/open-folder', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path: projectDir })
+                });
+            } catch (e) {
+                // Fallback: just show the path
+                alert('Output folder: ' + projectDir);
+            }
+        }
+
+        // Init
+        renderPersonas();
+        initDragDrop();
+        checkSupportedFormats();
+    </script>
+</body>
+</html>

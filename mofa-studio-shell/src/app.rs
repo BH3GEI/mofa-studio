@@ -42,6 +42,7 @@ use mofa_webview_demo::MoFaWebViewDemoApp;
 use mofa_personal_news::MoFaPersonalNewsApp;
 use mofa_transcriber::MoFaTranscriberApp;
 use mofa_podcast::MoFaPodcastApp;
+use mofa_podcast_factory::MoFaPodcastFactoryApp;
 use mofa_settings::data::Preferences;
 use mofa_settings::screen::SettingsScreenWidgetRefExt;
 
@@ -400,6 +401,7 @@ impl LiveHook for App {
         self.app_registry.register(MoFaPersonalNewsApp::info());
         self.app_registry.register(MoFaTranscriberApp::info());
         self.app_registry.register(MoFaPodcastApp::info());
+        self.app_registry.register(MoFaPodcastFactoryApp::info());
 
         // Initialize page router (defaults to MoFA FM)
         self.page_router = PageRouter::new();
@@ -474,6 +476,7 @@ impl LiveRegister for App {
         <MoFaPersonalNewsApp as MofaApp>::live_design(cx);
         <MoFaTranscriberApp as MofaApp>::live_design(cx);
         <MoFaPodcastApp as MofaApp>::live_design(cx);
+        <MoFaPodcastFactoryApp as MofaApp>::live_design(cx);
 
         // Shell widgets (order matters - tabs before dashboard, apps before dashboard)
         mofa_studio_shell::widgets::sidebar::live_design(cx);
@@ -815,6 +818,12 @@ impl App {
                 .set_active(cx, false);
         }
 
+        // Deactivate WebView when leaving Podcast Factory page
+        if old_page == Some(PageId::PodcastFactory) {
+            self.ui.web_view_container(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.podcast_factory_page.content.webview_area.webview_wrapper.webview))
+                .set_active(cx, false);
+        }
+
         // Update page visibility
         self.update_page_visibility(cx);
 
@@ -844,6 +853,12 @@ impl App {
                 .set_active(cx, true);
         }
 
+        // Activate WebView when entering Podcast Factory page
+        if page == PageId::PodcastFactory {
+            self.ui.web_view_container(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.podcast_factory_page.content.webview_area.webview_wrapper.webview))
+                .set_active(cx, true);
+        }
+
         self.ui.redraw(cx);
     }
 
@@ -868,6 +883,8 @@ impl App {
             .apply_over(cx, live!{ visible: (current == Some(PageId::Transcriber)) });
         self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.podcast_page))
             .apply_over(cx, live!{ visible: (current == Some(PageId::Podcast)) });
+        self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.podcast_factory_page))
+            .apply_over(cx, live!{ visible: (current == Some(PageId::PodcastFactory)) });
     }
 
     /// Update hero title panel with current app info
@@ -881,6 +898,7 @@ impl App {
             PageId::PersonalNews => ("Personal News", "Personal news broadcast"),
             PageId::Transcriber => ("AI Transcriber", "Audio/video transcription and summarization"),
             PageId::Podcast => ("Podcast Generator", "Generate podcast audio from scripts"),
+            PageId::PodcastFactory => ("Podcast Factory", "Generate multi-episode podcast series from books"),
         };
 
         self.ui.label(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.hero_title_panel.title_container.app_title))
