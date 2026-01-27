@@ -46,6 +46,9 @@ live_design! {
     use mofa_transcriber::screen::TranscriberScreen;
     use mofa_podcast::screen::PodcastScreen;
     use mofa_podcast_factory::screen::PodcastFactoryScreen;
+    use mofa_note_taker::screen::NoteTakerScreen;
+    use mofa_hello_world::screen::HelloWorldScreen;
+    use mofa_widgets::plugins::screen::PluginScreen;
     use crate::widgets::tabs::TabWidget;
     use crate::widgets::tabs::TabBar;
 
@@ -391,6 +394,21 @@ live_design! {
                         }
 
                         podcast_factory_page = <PodcastFactoryScreen> {
+                            width: Fill, height: Fill
+                            visible: false
+                        }
+
+                        note_taker_page = <NoteTakerScreen> {
+                            width: Fill, height: Fill
+                            visible: false
+                        }
+
+                        hello_world_page = <HelloWorldScreen> {
+                            width: Fill, height: Fill
+                            visible: false
+                        }
+
+                        plugin_page = <PluginScreen> {
                             width: Fill, height: Fill
                             visible: false
                         }

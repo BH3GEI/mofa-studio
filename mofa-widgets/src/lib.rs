@@ -79,6 +79,7 @@ pub mod audio_player;
 pub mod led_gauge;
 pub mod log_panel;
 pub mod participant_panel;
+pub mod plugins;
 pub mod theme;
 pub mod waveform_view;
 pub mod webview;
@@ -123,6 +124,7 @@ pub fn live_design(cx: &mut Cx) {
     log_panel::live_design(cx);
     led_gauge::live_design(cx);
     webview::live_design(cx);
+    plugins::live_design(cx);
 }
 
 // Re-export commonly used types

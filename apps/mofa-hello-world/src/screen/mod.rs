@@ -1,6 +1,6 @@
-//! Podcast Factory Screen
+//! Hello World Screen
 //!
-//! WebView-based multi-episode podcast generator
+//! WebView-based example plugin
 
 use makepad_widgets::*;
 use mofa_widgets::webview::{WebViewAction, WebViewContainerWidgetExt};
@@ -124,7 +124,7 @@ live_design! {
         }
     }
 
-    pub PodcastFactoryScreen = {{PodcastFactoryScreen}} {
+    pub HelloWorldScreen = {{HelloWorldScreen}} {
         width: Fill, height: Fill
         flow: Down
         show_bg: true
@@ -229,7 +229,7 @@ live_design! {
             <View> { width: Fill, height: 1 }
 
             version_label = <Label> {
-                text: "Book Cast v0.1"
+                text: "Hello World v1.0"
                 draw_text: {
                     instance dark_mode: 0.0
                     text_style: { font_size: 10.0 }
@@ -257,7 +257,7 @@ fn get_python_path() -> Option<PathBuf> {
     if let Ok(exe_path) = std::env::current_exe() {
         if let Some(target_dir) = exe_path.parent() {
             if let Some(workspace) = target_dir.parent().and_then(|p| p.parent()) {
-                let python_path = workspace.join("apps/mofa-podcast-factory/python/web");
+                let python_path = workspace.join("apps/mofa-hello-world/python");
                 if python_path.join("app.py").exists() {
                     return Some(python_path);
                 }
@@ -266,8 +266,8 @@ fn get_python_path() -> Option<PathBuf> {
     }
 
     let candidates = [
-        "apps/mofa-podcast-factory/python/web",
-        "../apps/mofa-podcast-factory/python/web",
+        "apps/mofa-hello-world/python",
+        "../apps/mofa-hello-world/python",
     ];
 
     for candidate in candidates {
@@ -284,7 +284,7 @@ fn get_config_path() -> PathBuf {
     dirs::home_dir()
         .unwrap_or_else(|| PathBuf::from("."))
         .join(".mofa-studio")
-        .join("podcast-factory.json")
+        .join("hello-world.json")
 }
 
 fn load_python_config() -> String {
@@ -334,7 +334,7 @@ impl PythonServer {
         let port = find_available_port().ok_or("Failed to find available port")?;
         let python_path = get_python_path().ok_or("Python files not found")?;
 
-        ::log::info!("Starting Podcast Factory server on port {}", port);
+        ::log::info!("Starting Hello World server on port {}", port);
         ::log::info!("Python path: {:?}", python_path);
 
         let child = Command::new(&self.python_cmd)
@@ -371,7 +371,7 @@ impl Drop for PythonServer {
 }
 
 #[derive(Live, LiveHook, Widget)]
-pub struct PodcastFactoryScreen {
+pub struct HelloWorldScreen {
     #[deref]
     view: View,
 
@@ -382,7 +382,7 @@ pub struct PodcastFactoryScreen {
     url_loaded: bool,
 }
 
-impl Widget for PodcastFactoryScreen {
+impl Widget for HelloWorldScreen {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         self.view.handle_event(cx, event, scope);
 
@@ -416,7 +416,7 @@ impl Widget for PodcastFactoryScreen {
                 if wa.widget_uid == our_uid {
                     match wa.cast() {
                         WebViewAction::Initialized => {
-                            ::log::info!("Podcast Factory WebView initialized");
+                            ::log::info!("Hello World WebView initialized");
                             let server = self.server.lock().unwrap();
                             if server.is_running() {
                                 drop(server);
@@ -443,7 +443,7 @@ impl Widget for PodcastFactoryScreen {
     }
 }
 
-impl PodcastFactoryScreen {
+impl HelloWorldScreen {
     fn toggle_server(&mut self, cx: &mut Cx) {
         let is_running = {
             let server = self.server.lock().unwrap();
@@ -467,7 +467,7 @@ impl PodcastFactoryScreen {
 
             match result {
                 Ok(port) => {
-                    ::log::info!("Podcast Factory server started on port {}", port);
+                    ::log::info!("Hello World server started on port {}", port);
                     self.set_status(cx, &format!("Server running on port {}", port), 2.0);
                     self.view.button(ids!(status_bar.start_btn)).set_text(cx, "Stop Server");
 
@@ -529,7 +529,7 @@ impl PodcastFactoryScreen {
     }
 }
 
-impl PodcastFactoryScreenRef {
+impl HelloWorldScreenRef {
     pub fn update_dark_mode(&self, cx: &mut Cx, dark_mode: f64) {
         if let Some(mut inner) = self.borrow_mut() {
             inner.view.apply_over(

@@ -8,7 +8,7 @@
 //! - Helper Methods (organized by responsibility)
 
 use makepad_widgets::*;
-use mofa_studio_shell::widgets::sidebar::SidebarWidgetRefExt;
+use mofa_studio_shell::widgets::sidebar::{SidebarWidgetRefExt, SidebarAction};
 use mofa_ui::{MofaTheme, MofaAppData};
 use mofa_dora_bridge::SharedDoraState;
 
@@ -35,6 +35,8 @@ pub fn get_cli_args() -> &'static Args {
 // App plugin system imports
 use mofa_widgets::{MofaApp, AppRegistry, TimerControl, PageRouter, PageId, tab_clicked};
 use mofa_widgets::webview::WebViewContainerWidgetRefExt;
+use mofa_widgets::plugins::{PluginLoader, PluginScreenWidgetRefExt};
+use std::sync::{Arc, Mutex};
 use mofa_fm::{MoFaFMApp, MoFaFMScreenWidgetRefExt};
 use mofa_debate::MoFaDebateApp;
 use mofa_settings::MoFaSettingsApp;
@@ -43,6 +45,8 @@ use mofa_personal_news::MoFaPersonalNewsApp;
 use mofa_transcriber::MoFaTranscriberApp;
 use mofa_podcast::MoFaPodcastApp;
 use mofa_podcast_factory::MoFaPodcastFactoryApp;
+use mofa_note_taker::MoFaNoteTakerApp;
+use mofa_hello_world::MoFaHelloWorldApp;
 use mofa_settings::data::Preferences;
 use mofa_settings::screen::SettingsScreenWidgetRefExt;
 
@@ -389,6 +393,12 @@ pub struct App {
     /// Whether initial theme has been applied (on first draw)
     #[rust]
     theme_initialized: bool,
+    /// Plugin loader for dynamic WebView plugins
+    #[rust]
+    plugin_loader: Arc<Mutex<PluginLoader>>,
+    /// Currently active plugin ID (when on Plugin page)
+    #[rust]
+    current_plugin_id: Option<String>,
 }
 
 impl LiveHook for App {
@@ -402,6 +412,8 @@ impl LiveHook for App {
         self.app_registry.register(MoFaTranscriberApp::info());
         self.app_registry.register(MoFaPodcastApp::info());
         self.app_registry.register(MoFaPodcastFactoryApp::info());
+        self.app_registry.register(MoFaNoteTakerApp::info());
+        self.app_registry.register(MoFaHelloWorldApp::info());
 
         // Initialize page router (defaults to MoFA FM)
         self.page_router = PageRouter::new();
@@ -428,6 +440,16 @@ impl LiveHook for App {
             cli_args.dark_mode,
             prefs.dark_mode
         );
+
+        // Initialize plugin loader and scan for plugins
+        let mut loader = PluginLoader::new();
+        let plugins = loader.scan_plugins();
+        if !plugins.is_empty() {
+            ::log::info!("Loaded {} plugin(s): {:?}", plugins.len(), plugins);
+        } else {
+            ::log::info!("No plugins found in {:?}", loader.plugins_dir());
+        }
+        self.plugin_loader = Arc::new(Mutex::new(loader));
     }
 }
 
@@ -477,6 +499,8 @@ impl LiveRegister for App {
         <MoFaTranscriberApp as MofaApp>::live_design(cx);
         <MoFaPodcastApp as MofaApp>::live_design(cx);
         <MoFaPodcastFactoryApp as MofaApp>::live_design(cx);
+        <MoFaNoteTakerApp as MofaApp>::live_design(cx);
+        <MoFaHelloWorldApp as MofaApp>::live_design(cx);
 
         // Shell widgets (order matters - tabs before dashboard, apps before dashboard)
         mofa_studio_shell::widgets::sidebar::live_design(cx);
@@ -503,6 +527,9 @@ impl AppMain for App {
                 self.apply_dark_mode_screens(cx);
                 // Update header theme toggle icon
                 self.update_theme_toggle_icon(cx);
+
+                // Initialize plugin list in sidebars
+                self.setup_plugin_list(cx);
             }
         }
 
@@ -754,6 +781,17 @@ impl App {
     /// Handle sidebar menu item clicks (both overlay and pinned sidebars)
     /// Uses path-based click detection to avoid WidgetUid mismatch issues
     fn handle_sidebar_clicks(&mut self, cx: &mut Cx, actions: &[Action]) {
+        // Check for plugin selection action from sidebar
+        for action in actions {
+            if let Some(wa) = action.as_widget_action() {
+                if let SidebarAction::PluginSelected(plugin_id) = wa.cast() {
+                    ::log::info!("Plugin selected: {}", plugin_id);
+                    self.navigate_to_plugin(cx, &plugin_id);
+                    return;
+                }
+            }
+        }
+
         // Use PageRouter to detect tab clicks via path-based search
         if let Some(page) = self.page_router.check_tab_click(actions) {
             ::log::info!("Tab clicked: {:?}", page);
@@ -761,9 +799,8 @@ impl App {
             return;
         }
 
-        // App buttons (1-20) - use path-based detection
+        // App buttons (5-20) - use path-based detection (1-4 are now handled by plugins or sidebar)
         let app_btn_ids = [
-            live_id!(app1_btn), live_id!(app2_btn), live_id!(app3_btn), live_id!(app4_btn),
             live_id!(app5_btn), live_id!(app6_btn), live_id!(app7_btn), live_id!(app8_btn),
             live_id!(app9_btn), live_id!(app10_btn), live_id!(app11_btn), live_id!(app12_btn),
             live_id!(app13_btn), live_id!(app14_btn), live_id!(app15_btn), live_id!(app16_btn),
@@ -824,6 +861,12 @@ impl App {
                 .set_active(cx, false);
         }
 
+        // Deactivate Plugin WebView when leaving Plugin page
+        if old_page == Some(PageId::Plugin) {
+            self.ui.plugin_screen(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.plugin_page))
+                .set_active(cx, false);
+        }
+
         // Update page visibility
         self.update_page_visibility(cx);
 
@@ -859,6 +902,12 @@ impl App {
                 .set_active(cx, true);
         }
 
+        // Activate PluginScreen WebView when entering Plugin page
+        if page == PageId::Plugin {
+            self.ui.plugin_screen(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.plugin_page))
+                .set_active(cx, true);
+        }
+
         self.ui.redraw(cx);
     }
 
@@ -885,6 +934,65 @@ impl App {
             .apply_over(cx, live!{ visible: (current == Some(PageId::Podcast)) });
         self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.podcast_factory_page))
             .apply_over(cx, live!{ visible: (current == Some(PageId::PodcastFactory)) });
+        self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.plugin_page))
+            .apply_over(cx, live!{ visible: (current == Some(PageId::Plugin)) });
+    }
+
+    /// Navigate to a specific plugin
+    pub fn navigate_to_plugin(&mut self, cx: &mut Cx, plugin_id: &str) {
+        // Check if plugin exists
+        let plugin_exists = if let Ok(loader) = self.plugin_loader.lock() {
+            loader.get_plugin(plugin_id).is_some()
+        } else {
+            false
+        };
+
+        if !plugin_exists {
+            ::log::warn!("Plugin not found: {}", plugin_id);
+            return;
+        }
+
+        // Store current plugin ID
+        self.current_plugin_id = Some(plugin_id.to_string());
+
+        // Bind plugin to PluginScreen and auto-start server
+        let plugin_screen = self.ui.plugin_screen(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.plugin_page));
+        plugin_screen.bind_plugin_and_start(cx, plugin_id.to_string(), self.plugin_loader.clone());
+
+        // Update hero title with plugin info
+        if let Ok(loader) = self.plugin_loader.lock() {
+            if let Some(plugin) = loader.get_plugin(plugin_id) {
+                self.ui.label(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.hero_title_panel.title_container.app_title))
+                    .set_text(cx, &plugin.manifest.name);
+                self.ui.label(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.hero_title_panel.title_container.app_description))
+                    .set_text(cx, &plugin.manifest.description);
+            }
+        }
+
+        // Navigate to plugin page
+        self.navigate_to_page(cx, PageId::Plugin);
+    }
+
+    /// Setup plugin list in sidebars
+    fn setup_plugin_list(&mut self, cx: &mut Cx) {
+        // Get plugins from loader
+        let plugins: Vec<(String, String)> = if let Ok(loader) = self.plugin_loader.lock() {
+            loader.plugins()
+                .filter(|p| p.manifest.show_in_sidebar)
+                .map(|p| (p.manifest.id.clone(), p.manifest.name.clone()))
+                .collect()
+        } else {
+            vec![]
+        };
+
+        if !plugins.is_empty() {
+            ::log::info!("Setting up {} plugins in sidebar", plugins.len());
+            // Set plugins in both sidebars
+            self.ui.sidebar(ids!(sidebar_menu_overlay.sidebar_content))
+                .set_plugins(cx, plugins.clone());
+            self.ui.sidebar(ids!(pinned_sidebar.pinned_sidebar_content))
+                .set_plugins(cx, plugins);
+        }
     }
 
     /// Update hero title panel with current app info
@@ -898,7 +1006,8 @@ impl App {
             PageId::PersonalNews => ("Personal News", "Personal news broadcast"),
             PageId::Transcriber => ("AI Transcriber", "Audio/video transcription and summarization"),
             PageId::Podcast => ("Podcast Generator", "Generate podcast audio from scripts"),
-            PageId::PodcastFactory => ("Podcast Factory", "Generate multi-episode podcast series from books"),
+            PageId::PodcastFactory => ("Book Cast", "Transform books into podcast series"),
+            PageId::Plugin => ("Plugin", "Dynamic plugin"),
         };
 
         self.ui.label(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.hero_title_panel.title_container.app_title))

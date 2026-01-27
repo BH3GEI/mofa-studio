@@ -1,25 +1,20 @@
-//! Podcast Factory Screen
-//!
-//! WebView-based multi-episode podcast generator
+//! Generic plugin screen - WebView container for dynamic plugins
 
 use makepad_widgets::*;
-use mofa_widgets::webview::{WebViewAction, WebViewContainerWidgetExt};
-use std::net::TcpListener;
-use std::process::{Child, Command, Stdio};
+use crate::webview::{WebViewAction, WebViewContainerWidgetExt};
+use super::PluginLoader;
 use std::sync::{Arc, Mutex};
-use std::path::PathBuf;
-use std::fs;
 
 live_design! {
     use link::theme::*;
     use link::shaders::*;
     use link::widgets::*;
 
-    use mofa_widgets::theme::*;
-    use mofa_widgets::webview::WebViewContainer;
+    use crate::theme::*;
+    use crate::webview::WebViewContainer;
 
-    // Navigation button style
-    NavButton = <Button> {
+    // Status bar button
+    PluginNavButton = <Button> {
         width: 32, height: 28
         padding: 0
         margin: {right: 4}
@@ -40,12 +35,7 @@ live_design! {
                     vec4(0.28, 0.30, 0.35, 1.0),
                     self.dark_mode
                 );
-                let pressed_color = mix(
-                    vec4(0.75, 0.78, 0.82, 1.0),
-                    vec4(0.32, 0.34, 0.40, 1.0),
-                    self.dark_mode
-                );
-                let color = mix(mix(base, hover_color, self.hover), pressed_color, self.pressed);
+                let color = mix(base, hover_color, self.hover);
                 sdf.fill(color);
                 return sdf.result;
             }
@@ -63,15 +53,13 @@ live_design! {
         }
     }
 
-    // Start server button style
-    StartButton = <Button> {
+    PluginStartButton = <Button> {
         width: Fit, height: 28
         padding: {left: 12, right: 12}
         margin: {right: 8}
         draw_bg: {
             instance dark_mode: 0.0
             instance hover: 0.0
-            instance pressed: 0.0
             fn pixel(self) -> vec4 {
                 let sdf = Sdf2d::viewport(self.pos * self.rect_size);
                 sdf.box(0., 0., self.rect_size.x, self.rect_size.y, 4.0);
@@ -85,13 +73,7 @@ live_design! {
                     vec4(0.30, 0.50, 0.80, 1.0),
                     self.dark_mode
                 );
-                let pressed_color = mix(
-                    vec4(0.25, 0.50, 0.80, 1.0),
-                    vec4(0.22, 0.42, 0.70, 1.0),
-                    self.dark_mode
-                );
-                let color = mix(mix(base, hover_color, self.hover), pressed_color, self.pressed);
-                sdf.fill(color);
+                sdf.fill(mix(base, hover_color, self.hover));
                 return sdf.result;
             }
         }
@@ -103,7 +85,6 @@ live_design! {
         }
     }
 
-    // Status indicator dot
     StatusDot = <View> {
         width: 8, height: 8
         show_bg: true
@@ -124,7 +105,7 @@ live_design! {
         }
     }
 
-    pub PodcastFactoryScreen = {{PodcastFactoryScreen}} {
+    pub PluginScreen = {{PluginScreen}} {
         width: Fill, height: Fill
         flow: Down
         show_bg: true
@@ -139,7 +120,6 @@ live_design! {
             }
         }
 
-        // Main content area
         content = <View> {
             width: Fill, height: Fill
 
@@ -171,7 +151,6 @@ live_design! {
             }
         }
 
-        // Status bar
         status_bar = <View> {
             width: Fill, height: 36
             flow: Right
@@ -189,21 +168,13 @@ live_design! {
                 }
             }
 
-            start_btn = <StartButton> {
-                text: "Start Server"
+            start_btn = <PluginStartButton> {
+                text: "Start"
             }
 
-            back_btn = <NavButton> {
-                text: "<"
-            }
-
-            forward_btn = <NavButton> {
-                text: ">"
-            }
-
-            reload_btn = <NavButton> {
-                text: "R"
-            }
+            back_btn = <PluginNavButton> { text: "<" }
+            forward_btn = <PluginNavButton> { text: ">" }
+            reload_btn = <PluginNavButton> { text: "R" }
 
             <View> { width: 12, height: 1 }
 
@@ -212,7 +183,7 @@ live_design! {
             <View> { width: 8, height: 1 }
 
             status_text = <Label> {
-                text: "Server not running"
+                text: "Not running"
                 draw_text: {
                     instance dark_mode: 0.0
                     text_style: { font_size: 11.0 }
@@ -228,8 +199,8 @@ live_design! {
 
             <View> { width: Fill, height: 1 }
 
-            version_label = <Label> {
-                text: "Book Cast v0.1"
+            plugin_name = <Label> {
+                text: "Plugin"
                 draw_text: {
                     instance dark_mode: 0.0
                     text_style: { font_size: 10.0 }
@@ -246,145 +217,43 @@ live_design! {
     }
 }
 
-fn find_available_port() -> Option<u16> {
-    TcpListener::bind("127.0.0.1:0")
-        .ok()
-        .and_then(|listener| listener.local_addr().ok())
-        .map(|addr| addr.port())
-}
-
-fn get_python_path() -> Option<PathBuf> {
-    if let Ok(exe_path) = std::env::current_exe() {
-        if let Some(target_dir) = exe_path.parent() {
-            if let Some(workspace) = target_dir.parent().and_then(|p| p.parent()) {
-                let python_path = workspace.join("apps/mofa-podcast-factory/python/web");
-                if python_path.join("app.py").exists() {
-                    return Some(python_path);
-                }
-            }
-        }
-    }
-
-    let candidates = [
-        "apps/mofa-podcast-factory/python/web",
-        "../apps/mofa-podcast-factory/python/web",
-    ];
-
-    for candidate in candidates {
-        let path = PathBuf::from(candidate);
-        if path.join("app.py").exists() {
-            return Some(path);
-        }
-    }
-
-    None
-}
-
-fn get_config_path() -> PathBuf {
-    dirs::home_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join(".mofa-studio")
-        .join("podcast-factory.json")
-}
-
-fn load_python_config() -> String {
-    let config_path = get_config_path();
-    if let Ok(content) = fs::read_to_string(&config_path) {
-        if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
-            if let Some(path) = json.get("python_path").and_then(|v| v.as_str()) {
-                return path.to_string();
-            }
-        }
-    }
-    if std::path::Path::new("/opt/homebrew/bin/python3.11").exists() {
-        "/opt/homebrew/bin/python3.11".to_string()
-    } else if std::path::Path::new("/opt/homebrew/bin/python3").exists() {
-        "/opt/homebrew/bin/python3".to_string()
-    } else {
-        "python3".to_string()
-    }
-}
-
-struct PythonServer {
-    process: Option<Child>,
-    port: u16,
-    python_cmd: String,
-}
-
-impl Default for PythonServer {
-    fn default() -> Self {
-        Self {
-            process: None,
-            port: 0,
-            python_cmd: load_python_config(),
-        }
-    }
-}
-
-impl PythonServer {
-    fn is_running(&self) -> bool {
-        self.process.is_some()
-    }
-
-    fn start(&mut self) -> Result<u16, String> {
-        if self.process.is_some() {
-            return Ok(self.port);
-        }
-
-        let port = find_available_port().ok_or("Failed to find available port")?;
-        let python_path = get_python_path().ok_or("Python files not found")?;
-
-        ::log::info!("Starting Podcast Factory server on port {}", port);
-        ::log::info!("Python path: {:?}", python_path);
-
-        let child = Command::new(&self.python_cmd)
-            .current_dir(&python_path)
-            .args(["app.py", &port.to_string()])
-            .stdout(Stdio::inherit())
-            .stderr(Stdio::inherit())
-            .spawn()
-            .map_err(|e| format!("Failed to start Python: {}", e))?;
-
-        self.process = Some(child);
-        self.port = port;
-
-        Ok(port)
-    }
-
-    fn stop(&mut self) {
-        if let Some(mut child) = self.process.take() {
-            let _ = child.kill();
-            let _ = child.wait();
-            self.port = 0;
-        }
-    }
-
-    fn url(&self) -> String {
-        format!("http://127.0.0.1:{}", self.port)
-    }
-}
-
-impl Drop for PythonServer {
-    fn drop(&mut self) {
-        self.stop();
-    }
-}
-
 #[derive(Live, LiveHook, Widget)]
-pub struct PodcastFactoryScreen {
+pub struct PluginScreen {
     #[deref]
     view: View,
 
+    /// Plugin ID this screen is bound to
     #[rust]
-    server: Arc<Mutex<PythonServer>>,
+    plugin_id: Option<String>,
 
+    /// Reference to the plugin loader (shared)
+    #[rust]
+    loader: Option<Arc<Mutex<PluginLoader>>>,
+
+    /// Whether URL has been loaded
     #[rust]
     url_loaded: bool,
+
+    /// Timer for delayed URL loading after server start
+    #[rust]
+    load_url_timer: Timer,
+
+    /// Whether we're waiting to load URL
+    #[rust]
+    pending_url_load: bool,
 }
 
-impl Widget for PodcastFactoryScreen {
+impl Widget for PluginScreen {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         self.view.handle_event(cx, event, scope);
+
+        // Handle timer for delayed URL loading
+        if self.load_url_timer.is_event(event).is_some() {
+            if self.pending_url_load {
+                self.pending_url_load = false;
+                self.load_url(cx);
+            }
+        }
 
         let actions = match event {
             Event::Actions(actions) => actions.as_slice(),
@@ -416,22 +285,19 @@ impl Widget for PodcastFactoryScreen {
                 if wa.widget_uid == our_uid {
                     match wa.cast() {
                         WebViewAction::Initialized => {
-                            ::log::info!("Podcast Factory WebView initialized");
-                            let server = self.server.lock().unwrap();
-                            if server.is_running() {
-                                drop(server);
+                            if self.is_server_running() {
                                 self.load_url(cx);
                             }
-                        }
-                        WebViewAction::InitFailed(err) => {
-                            self.set_status(cx, &format!("WebView failed: {}", err), 0.0);
                         }
                         WebViewAction::UrlChanged(url) => {
                             if url != "about:blank" {
                                 self.set_status(cx, "Connected", 1.0);
                             }
                         }
-                        WebViewAction::IpcMessage { .. } | WebViewAction::None => {}
+                        WebViewAction::InitFailed(err) => {
+                            self.set_status(cx, &format!("WebView error: {}", err), 0.0);
+                        }
+                        _ => {}
                     }
                 }
             }
@@ -443,62 +309,95 @@ impl Widget for PodcastFactoryScreen {
     }
 }
 
-impl PodcastFactoryScreen {
+impl PluginScreen {
+    /// Bind this screen to a plugin
+    pub fn bind_plugin(&mut self, cx: &mut Cx, plugin_id: String, loader: Arc<Mutex<PluginLoader>>) {
+        self.plugin_id = Some(plugin_id.clone());
+        self.loader = Some(loader.clone());
+
+        // Update UI with plugin info
+        if let Ok(loader) = loader.lock() {
+            if let Some(plugin) = loader.get_plugin(&plugin_id) {
+                let name = format!("{} v{}", plugin.manifest.name, plugin.manifest.version);
+                self.view.label(ids!(status_bar.plugin_name)).set_text(cx, &name);
+            }
+        }
+    }
+
     fn toggle_server(&mut self, cx: &mut Cx) {
-        let is_running = {
-            let server = self.server.lock().unwrap();
-            server.is_running()
+        let plugin_id = match &self.plugin_id {
+            Some(id) => id.clone(),
+            None => return,
+        };
+        let loader = match &self.loader {
+            Some(l) => l.clone(),
+            None => return,
         };
 
-        if is_running {
-            let mut server = self.server.lock().unwrap();
-            server.stop();
-            drop(server);
-            self.set_status(cx, "Server stopped", 0.0);
-            self.url_loaded = false;
-            self.view.button(ids!(status_bar.start_btn)).set_text(cx, "Start Server");
-        } else {
-            self.set_status(cx, "Starting server...", 2.0);
+        let is_running = self.is_server_running();
 
-            let result = {
-                let mut server = self.server.lock().unwrap();
-                server.start()
+        if is_running {
+            if let Ok(mut loader) = loader.lock() {
+                loader.stop_plugin(&plugin_id);
+            }
+            self.set_status(cx, "Stopped", 0.0);
+            self.url_loaded = false;
+            self.view.button(ids!(status_bar.start_btn)).set_text(cx, "Start");
+        } else {
+            self.set_status(cx, "Starting...", 2.0);
+
+            let result = if let Ok(mut loader) = loader.lock() {
+                loader.start_plugin(&plugin_id)
+            } else {
+                Err("Loader unavailable".to_string())
             };
 
             match result {
                 Ok(port) => {
-                    ::log::info!("Podcast Factory server started on port {}", port);
-                    self.set_status(cx, &format!("Server running on port {}", port), 2.0);
-                    self.view.button(ids!(status_bar.start_btn)).set_text(cx, "Stop Server");
+                    self.set_status(cx, &format!("Running on port {}", port), 2.0);
+                    self.view.button(ids!(status_bar.start_btn)).set_text(cx, "Stop");
 
-                    std::thread::sleep(std::time::Duration::from_millis(1500));
-                    self.load_url(cx);
+                    // Schedule URL load after server has time to start
+                    self.pending_url_load = true;
+                    self.load_url_timer = cx.start_timeout(1.0); // 1 second delay
                 }
                 Err(e) => {
-                    ::log::error!("Failed to start server: {}", e);
                     self.set_status(cx, &format!("Error: {}", e), 0.0);
                 }
             }
         }
     }
 
-    fn load_url(&mut self, cx: &mut Cx) {
-        let url = {
-            let server = self.server.lock().unwrap();
-            if !server.is_running() {
-                return;
+    fn is_server_running(&self) -> bool {
+        let Some(plugin_id) = &self.plugin_id else { return false };
+        let Some(loader) = &self.loader else { return false };
+
+        if let Ok(loader) = loader.lock() {
+            if let Some(plugin) = loader.get_plugin(plugin_id) {
+                return plugin.is_server_running();
             }
-            server.url()
+        }
+        false
+    }
+
+    fn load_url(&mut self, cx: &mut Cx) {
+        let Some(plugin_id) = &self.plugin_id else { return };
+        let Some(loader) = &self.loader else { return };
+
+        let url = if let Ok(loader) = loader.lock() {
+            loader.get_plugin(plugin_id).and_then(|p| p.get_url())
+        } else {
+            None
         };
 
-        self.url_loaded = true;
-        ::log::info!("Loading URL: {}", url);
-
-        let webview = self.view.web_view_container(ids!(content.webview_area.webview_wrapper.webview));
-        if let Err(e) = webview.load_url(&url) {
-            self.set_status(cx, &format!("Load error: {}", e), 0.0);
-        } else {
-            self.set_status(cx, "Loading...", 2.0);
+        if let Some(url) = url {
+            self.url_loaded = true;
+            let webview = self.view.web_view_container(ids!(content.webview_area.webview_wrapper.webview));
+            if let Err(e) = webview.load_url(&url) {
+                self.set_status(cx, &format!("Load error: {}", e), 0.0);
+            } else {
+                self.set_status(cx, "Loading...", 2.0);
+            }
         }
     }
 
@@ -529,70 +428,35 @@ impl PodcastFactoryScreen {
     }
 }
 
-impl PodcastFactoryScreenRef {
+impl PluginScreenRef {
+    pub fn bind_plugin(&self, cx: &mut Cx, plugin_id: String, loader: Arc<Mutex<PluginLoader>>) {
+        if let Some(mut inner) = self.borrow_mut() {
+            inner.bind_plugin(cx, plugin_id, loader);
+        }
+    }
+
+    /// Bind plugin and automatically start the server
+    pub fn bind_plugin_and_start(&self, cx: &mut Cx, plugin_id: String, loader: Arc<Mutex<PluginLoader>>) {
+        if let Some(mut inner) = self.borrow_mut() {
+            inner.bind_plugin(cx, plugin_id, loader);
+            // Auto-start server if not already running
+            if !inner.is_server_running() {
+                inner.toggle_server(cx);
+            }
+        }
+    }
+
     pub fn update_dark_mode(&self, cx: &mut Cx, dark_mode: f64) {
         if let Some(mut inner) = self.borrow_mut() {
-            inner.view.apply_over(
-                cx,
-                live! {
-                    draw_bg: { dark_mode: (dark_mode) }
-                },
-            );
-
-            inner.view.view(ids!(content.webview_area.webview_wrapper)).apply_over(
-                cx,
-                live! {
-                    draw_bg: { dark_mode: (dark_mode) }
-                },
-            );
-
-            inner.view.view(ids!(status_bar)).apply_over(
-                cx,
-                live! {
-                    draw_bg: { dark_mode: (dark_mode) }
-                },
-            );
-
-            inner.view.button(ids!(status_bar.start_btn)).apply_over(
-                cx,
-                live! {
-                    draw_bg: { dark_mode: (dark_mode) }
-                },
-            );
-            inner.view.button(ids!(status_bar.back_btn)).apply_over(
-                cx,
-                live! {
-                    draw_bg: { dark_mode: (dark_mode) }
-                    draw_text: { dark_mode: (dark_mode) }
-                },
-            );
-            inner.view.button(ids!(status_bar.forward_btn)).apply_over(
-                cx,
-                live! {
-                    draw_bg: { dark_mode: (dark_mode) }
-                    draw_text: { dark_mode: (dark_mode) }
-                },
-            );
-            inner.view.button(ids!(status_bar.reload_btn)).apply_over(
-                cx,
-                live! {
-                    draw_bg: { dark_mode: (dark_mode) }
-                    draw_text: { dark_mode: (dark_mode) }
-                },
-            );
-
-            inner.view.label(ids!(status_bar.status_text)).apply_over(
-                cx,
-                live! {
-                    draw_text: { dark_mode: (dark_mode) }
-                },
-            );
-            inner.view.label(ids!(status_bar.version_label)).apply_over(
-                cx,
-                live! {
-                    draw_text: { dark_mode: (dark_mode) }
-                },
-            );
+            inner.view.apply_over(cx, live! { draw_bg: { dark_mode: (dark_mode) } });
+            inner.view.view(ids!(content.webview_area.webview_wrapper)).apply_over(cx, live! { draw_bg: { dark_mode: (dark_mode) } });
+            inner.view.view(ids!(status_bar)).apply_over(cx, live! { draw_bg: { dark_mode: (dark_mode) } });
+            inner.view.button(ids!(status_bar.start_btn)).apply_over(cx, live! { draw_bg: { dark_mode: (dark_mode) } });
+            inner.view.button(ids!(status_bar.back_btn)).apply_over(cx, live! { draw_bg: { dark_mode: (dark_mode) } draw_text: { dark_mode: (dark_mode) } });
+            inner.view.button(ids!(status_bar.forward_btn)).apply_over(cx, live! { draw_bg: { dark_mode: (dark_mode) } draw_text: { dark_mode: (dark_mode) } });
+            inner.view.button(ids!(status_bar.reload_btn)).apply_over(cx, live! { draw_bg: { dark_mode: (dark_mode) } draw_text: { dark_mode: (dark_mode) } });
+            inner.view.label(ids!(status_bar.status_text)).apply_over(cx, live! { draw_text: { dark_mode: (dark_mode) } });
+            inner.view.label(ids!(status_bar.plugin_name)).apply_over(cx, live! { draw_text: { dark_mode: (dark_mode) } });
 
             // Send theme to WebView
             let webview = inner.view.web_view_container(ids!(content.webview_area.webview_wrapper.webview));
@@ -600,6 +464,13 @@ impl PodcastFactoryScreenRef {
             let _ = webview.eval(&js);
 
             inner.view.redraw(cx);
+        }
+    }
+
+    pub fn set_active(&self, cx: &mut Cx, active: bool) {
+        if let Some(inner) = self.borrow() {
+            let webview = inner.view.web_view_container(ids!(content.webview_area.webview_wrapper.webview));
+            webview.set_active(cx, active);
         }
     }
 }

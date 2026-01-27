@@ -1,0 +1,12 @@
+[package]
+name = "mofa-note-taker"
+version = "0.1.0"
+edition = "2021"
+description = "A simple note-taking application"
+
+[dependencies]
+makepad-widgets = { workspace = true }
+mofa-widgets = { path = "../../mofa-widgets" }
+log = "0.4"
+serde_json = "1.0"
+dirs = "5.0"

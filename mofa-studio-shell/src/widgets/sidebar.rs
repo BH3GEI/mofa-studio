@@ -263,7 +263,7 @@ live_design! {
             }
 
             podcast_factory_tab = <SidebarMenuButton> {
-                text: "Podcast Factory"
+                text: "Book Cast"
                 draw_icon: {
                     svg_file: dep("crate://self/resources/icons/app.svg")
                 }
@@ -361,6 +361,7 @@ pub enum SidebarSelection {
     Podcast,
     PodcastFactory,
     App(usize), // 1-20
+    Plugin(String), // Plugin ID
     Settings,
 }
 
@@ -368,6 +369,7 @@ pub enum SidebarSelection {
 pub enum SidebarAction {
     None,
     ToggleTheme,
+    PluginSelected(String), // Plugin ID selected
 }
 
 #[derive(Live, LiveHook, Widget)]
@@ -392,6 +394,10 @@ pub struct Sidebar {
 
     #[rust]
     cached_sidebar_height: f64, // Cached sidebar height from last draw
+
+    /// Dynamic plugins: Vec<(id, name)>
+    #[rust]
+    plugins: Vec<(String, String)>,
 }
 
 impl Widget for Sidebar {
@@ -586,7 +592,28 @@ impl Widget for Sidebar {
             }
         }
 
-        // Handle app button clicks using macro to reduce repetition
+        // Handle app button clicks - check if they correspond to plugins
+        // Apps 1-4 may be plugins if plugins are loaded
+        let app_btns = [
+            ids!(apps_scroll.app1_btn),
+            ids!(apps_scroll.app2_btn),
+            ids!(apps_scroll.app3_btn),
+            ids!(apps_scroll.app4_btn),
+        ];
+
+        for (i, btn_path) in app_btns.iter().enumerate() {
+            if self.view.button(btn_path.clone()).clicked(actions) {
+                // Check if this button corresponds to a plugin
+                if i < self.plugins.len() {
+                    let plugin_id = self.plugins[i].0.clone();
+                    self.handle_selection(cx, SidebarSelection::Plugin(plugin_id));
+                } else {
+                    self.handle_selection(cx, SidebarSelection::App(i + 1));
+                }
+            }
+        }
+
+        // Apps 5-20 are in more_apps_section (not used for plugins currently)
         macro_rules! handle_app_click {
             ($self:expr, $cx:expr, $actions:expr, $($idx:expr => $path:expr),+ $(,)?) => {
                 $(
@@ -598,12 +625,6 @@ impl Widget for Sidebar {
         }
 
         handle_app_click!(self, cx, actions,
-            // Apps 1-4 are directly in apps_scroll
-            1 => ids!(apps_scroll.app1_btn),
-            2 => ids!(apps_scroll.app2_btn),
-            3 => ids!(apps_scroll.app3_btn),
-            4 => ids!(apps_scroll.app4_btn),
-            // Apps 5-20 are in more_apps_section
             5 => ids!(apps_scroll.more_apps_section.app5_btn),
             6 => ids!(apps_scroll.more_apps_section.app6_btn),
             7 => ids!(apps_scroll.more_apps_section.app7_btn),
@@ -739,6 +760,24 @@ impl Sidebar {
                         .button(ids!(main_content.apps_wrapper.apps_scroll.pinned_app_btn))
                         .set_visible(cx, false);
                 }
+            }
+            SidebarSelection::Plugin(plugin_id) => {
+                // Find which button index corresponds to this plugin
+                if let Some(idx) = self.plugins.iter().position(|(id, _)| id == plugin_id) {
+                    self.set_app_button_selected(cx, idx + 1, true);
+                }
+                // Hide pinned app for plugins
+                self.pinned_app_name = None;
+                self.view
+                    .button(ids!(main_content.apps_wrapper.apps_scroll.pinned_app_btn))
+                    .set_visible(cx, false);
+
+                // Post action for app.rs to handle
+                cx.widget_action(
+                    self.view.widget_uid(),
+                    &HeapLiveIdPath::default(),
+                    SidebarAction::PluginSelected(plugin_id.clone()),
+                );
             }
             SidebarSelection::Settings => {
                 self.view
@@ -1048,6 +1087,49 @@ impl Sidebar {
 }
 
 impl SidebarRef {
+    /// Set the list of available plugins
+    /// plugins: Vec<(id, name)>
+    pub fn set_plugins(&self, cx: &mut Cx, plugins: Vec<(String, String)>) {
+        if let Some(mut inner) = self.borrow_mut() {
+            inner.plugins = plugins.clone();
+
+            // Update app buttons to show plugin names
+            // We use app1_btn through app4_btn for plugins
+            let btn_ids = [
+                ids!(main_content.apps_wrapper.apps_scroll.app1_btn),
+                ids!(main_content.apps_wrapper.apps_scroll.app2_btn),
+                ids!(main_content.apps_wrapper.apps_scroll.app3_btn),
+                ids!(main_content.apps_wrapper.apps_scroll.app4_btn),
+            ];
+
+            for (i, btn_path) in btn_ids.iter().enumerate() {
+                if i < plugins.len() {
+                    inner.view.button(btn_path.clone()).set_text(cx, &plugins[i].1);
+                    inner.view.button(btn_path.clone()).set_visible(cx, true);
+                } else {
+                    // Hide unused buttons
+                    inner.view.button(btn_path.clone()).set_visible(cx, false);
+                }
+            }
+
+            // Hide the "Show More" section if we only have plugins
+            inner.view.view(ids!(main_content.apps_wrapper.apps_scroll.show_more_btn))
+                .set_visible(cx, plugins.len() > 4);
+
+            inner.view.redraw(cx);
+        }
+    }
+
+    /// Get the current selection if it's a plugin
+    pub fn get_selected_plugin(&self) -> Option<String> {
+        if let Some(inner) = self.borrow() {
+            if let Some(SidebarSelection::Plugin(id)) = &inner.selection {
+                return Some(id.clone());
+            }
+        }
+        None
+    }
+
     /// Set the maximum scroll height for the apps list when expanded
     /// This should be called by app.rs when window size changes
     pub fn set_max_scroll_height(&self, max_height: f64) {
@@ -1182,6 +1264,12 @@ impl SidebarRef {
                                         draw_bg: { selected: 1.0 }
                                     },
                                 );
+                        }
+                    }
+                    SidebarSelection::Plugin(plugin_id) => {
+                        // Find which button index corresponds to this plugin
+                        if let Some(idx) = inner.plugins.iter().position(|(id, _)| id == &plugin_id) {
+                            inner.set_app_button_selected(cx, idx + 1, true);
                         }
                     }
                     SidebarSelection::Settings => {
