@@ -361,9 +361,20 @@ fn find_available_port() -> Option<u16> {
 fn get_python_path() -> Option<PathBuf> {
     // Try from executable location
     if let Ok(exe_path) = std::env::current_exe() {
-        // Navigate from target/debug to workspace, then to apps/mofa-personal-news/python
+        // Check inside app bundle (macOS): .app/Contents/Resources/apps/mofa-personal-news/web
+        if let Some(macos_dir) = exe_path.parent() {
+            let resources_path = macos_dir
+                .parent() // Contents
+                .map(|p| p.join("Resources/apps/mofa-personal-news/web"));
+            if let Some(ref path) = resources_path {
+                if path.join("app.py").exists() {
+                    return Some(path.clone());
+                }
+            }
+        }
+
+        // Check development path: target/release -> workspace/apps/...
         if let Some(target_dir) = exe_path.parent() {
-            // target/debug -> target -> workspace
             if let Some(workspace) = target_dir.parent().and_then(|p| p.parent()) {
                 let python_path = workspace.join("apps/mofa-personal-news/python/web");
                 if python_path.join("app.py").exists() {

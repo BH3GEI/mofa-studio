@@ -5,6 +5,7 @@ use crate::data::{Provider, ProviderId, Preferences};
 use crate::providers_panel::{ProvidersPanelAction, ProvidersPanelWidgetExt};
 use crate::provider_view::ProviderViewWidgetExt;
 use crate::add_provider_modal::{AddProviderModalAction, AddProviderModalWidgetExt};
+use crate::models_view::ModelsViewWidgetExt;
 
 live_design! {
     use link::theme::*;
@@ -15,6 +16,7 @@ live_design! {
 
     use crate::providers_panel::ProvidersPanel;
     use crate::provider_view::ProviderView;
+    use crate::models_view::ModelsView;
     use crate::add_provider_modal::AddProviderModal;
 
     // Divider line with dark mode support
@@ -52,8 +54,19 @@ live_design! {
             // Divider
             vertical_divider = <VerticalDivider> {}
 
-            // Right panel - provider details
-            provider_view = <ProviderView> {}
+            // Right panel container - overlay for switching views
+            right_panel = <View> {
+                width: Fill, height: Fill
+                flow: Overlay
+
+                // Provider details view
+                provider_view = <ProviderView> {}
+
+                // Models view (hidden by default)
+                models_view = <ModelsView> {
+                    visible: false
+                }
+            }
         }
 
         // Modal overlay (hidden by default)
@@ -71,6 +84,12 @@ pub struct SettingsScreen {
 
     #[rust]
     selected_provider_id: Option<ProviderId>,
+
+    #[rust]
+    showing_models: bool,
+
+    #[rust]
+    initialized: bool,
 }
 
 impl Widget for SettingsScreen {
@@ -78,13 +97,14 @@ impl Widget for SettingsScreen {
         self.view.handle_event(cx, event, scope);
 
         // Initialize with default provider on first event
-        if self.selected_provider_id.is_none() {
+        if !self.initialized {
             // Load custom providers into the panel
             self.view.providers_panel(ids!(content.providers_panel)).load_providers(cx);
 
             let default_id = ProviderId::from("openai");
             self.selected_provider_id = Some(default_id.clone());
             self.load_provider_to_view(cx, &default_id);
+            self.initialized = true;
         }
 
         // Extract actions for button clicks
@@ -94,19 +114,30 @@ impl Widget for SettingsScreen {
         };
 
         // Handle provider panel actions
+        let mut selected_provider: Option<ProviderId> = None;
+        let mut add_provider_clicked = false;
+
         for action in actions {
             match action.as_widget_action().cast() {
                 ProvidersPanelAction::Selected(id) => {
-                    if self.selected_provider_id.as_ref() != Some(&id) {
-                        self.selected_provider_id = Some(id.clone());
-                        self.load_provider_to_view(cx, &id);
-                    }
+                    selected_provider = Some(id.clone());
                 }
                 ProvidersPanelAction::AddProviderClicked => {
-                    self.view.add_provider_modal(ids!(add_provider_modal)).show(cx);
+                    add_provider_clicked = true;
                 }
                 _ => {}
             }
+        }
+
+        if let Some(id) = selected_provider {
+            if self.selected_provider_id.as_ref() != Some(&id) {
+                self.selected_provider_id = Some(id.clone());
+                self.load_provider_to_view(cx, &id);
+            }
+        }
+
+        if add_provider_clicked {
+            self.view.add_provider_modal(ids!(add_provider_modal)).show(cx);
         }
 
         // Handle modal actions
@@ -129,17 +160,17 @@ impl Widget for SettingsScreen {
         }
 
         // Handle save button
-        if self.view.button(ids!(content.provider_view.save_button)).clicked(actions) {
+        if self.view.button(ids!(content.right_panel.provider_view.save_button)).clicked(actions) {
             self.save_current_provider(cx);
         }
 
         // Handle remove button
-        if self.view.button(ids!(content.provider_view.remove_button)).clicked(actions) {
+        if self.view.button(ids!(content.right_panel.provider_view.remove_button)).clicked(actions) {
             self.remove_current_provider(cx);
         }
 
         // Handle sync button
-        if self.view.button(ids!(content.provider_view.sync_button)).clicked(actions) {
+        if self.view.button(ids!(content.right_panel.provider_view.sync_button)).clicked(actions) {
             self.sync_models(cx);
         }
     }
@@ -150,6 +181,20 @@ impl Widget for SettingsScreen {
 }
 
 impl SettingsScreen {
+    fn show_provider_view(&mut self, cx: &mut Cx) {
+        self.view.view(ids!(content.right_panel.provider_view)).set_visible(cx, true);
+        self.view.view(ids!(content.right_panel.models_view)).set_visible(cx, false);
+        self.view.redraw(cx);
+    }
+
+    fn show_models_view(&mut self, cx: &mut Cx) {
+        self.view.view(ids!(content.right_panel.provider_view)).set_visible(cx, false);
+        self.view.view(ids!(content.right_panel.models_view)).set_visible(cx, true);
+        // Refresh model status
+        self.view.models_view(ids!(content.right_panel.models_view)).refresh(cx);
+        self.view.redraw(cx);
+    }
+
     fn load_provider_to_view(&mut self, cx: &mut Cx, provider_id: &ProviderId) {
         // Load preferences if needed (limited scope to avoid borrow conflicts)
         if self.preferences.is_none() {
@@ -211,45 +256,45 @@ impl SettingsScreen {
         };
 
         // Now use the cloned data to update the view (borrow is released)
-        self.view.label(ids!(content.provider_view.provider_name)).set_text(cx, &provider_name);
-        self.view.text_input(ids!(content.provider_view.api_host_input)).set_text(cx, &provider_url);
-        self.view.text_input(ids!(content.provider_view.api_key_input)).set_text(cx, &api_key);
+        self.view.label(ids!(content.right_panel.provider_view.provider_name)).set_text(cx, &provider_name);
+        self.view.text_input(ids!(content.right_panel.provider_view.api_host_input)).set_text(cx, &provider_url);
+        self.view.text_input(ids!(content.right_panel.provider_view.api_key_input)).set_text(cx, &api_key);
 
         // Models are now handled by ProviderView's PortalList - just update status labels
         // Update no models label and sync status
-        self.view.label(ids!(content.provider_view.no_models_label)).set_visible(cx, saved_models.is_empty());
+        self.view.label(ids!(content.right_panel.provider_view.no_models_label)).set_visible(cx, saved_models.is_empty());
         if !saved_models.is_empty() {
-            self.view.label(ids!(content.provider_view.sync_status)).set_text(cx, &format!("{} models", saved_models.len()));
+            self.view.label(ids!(content.right_panel.provider_view.sync_status)).set_text(cx, &format!("{} models", saved_models.len()));
         } else if has_api_key {
-            self.view.label(ids!(content.provider_view.sync_status)).set_text(cx, "");
+            self.view.label(ids!(content.right_panel.provider_view.sync_status)).set_text(cx, "");
         } else {
-            self.view.label(ids!(content.provider_view.sync_status)).set_text(cx, "Enter API key to sync models");
+            self.view.label(ids!(content.right_panel.provider_view.sync_status)).set_text(cx, "Enter API key to sync models");
         }
 
         // Update sync button state based on API key
         if has_api_key {
-            self.view.button(ids!(content.provider_view.sync_button)).apply_over(cx, live!{
+            self.view.button(ids!(content.right_panel.provider_view.sync_button)).apply_over(cx, live!{
                 draw_bg: { disabled: 0.0 }
             });
         } else {
-            self.view.button(ids!(content.provider_view.sync_button)).apply_over(cx, live!{
+            self.view.button(ids!(content.right_panel.provider_view.sync_button)).apply_over(cx, live!{
                 draw_bg: { disabled: 1.0 }
             });
         }
 
         // Show content, hide empty state
-        self.view.view(ids!(content.provider_view.content)).set_visible(cx, true);
-        self.view.view(ids!(content.provider_view.empty_state)).set_visible(cx, false);
-        self.view.button(ids!(content.provider_view.remove_button)).set_visible(cx, is_custom);
+        self.view.view(ids!(content.right_panel.provider_view.content)).set_visible(cx, true);
+        self.view.view(ids!(content.right_panel.provider_view.empty_state)).set_visible(cx, false);
+        self.view.button(ids!(content.right_panel.provider_view.remove_button)).set_visible(cx, is_custom);
 
         self.view.redraw(cx);
     }
 
     fn save_current_provider(&mut self, _cx: &mut Cx) {
         if let Some(provider_id) = &self.selected_provider_id {
-            let api_host = self.view.text_input(ids!(content.provider_view.api_host_input)).text();
+            let api_host = self.view.text_input(ids!(content.right_panel.provider_view.api_host_input)).text();
             let api_key = {
-                let key = self.view.text_input(ids!(content.provider_view.api_key_input)).text();
+                let key = self.view.text_input(ids!(content.right_panel.provider_view.api_key_input)).text();
                 if key.is_empty() { None } else { Some(key) }
             };
 
@@ -292,9 +337,9 @@ impl SettingsScreen {
 
                     // Clear the view and selection
                     self.selected_provider_id = None;
-                    self.view.view(ids!(content.provider_view.content)).set_visible(cx, false);
-                    self.view.view(ids!(content.provider_view.empty_state)).set_visible(cx, true);
-                    self.view.label(ids!(content.provider_view.provider_name)).set_text(cx, "Select a Provider");
+                    self.view.view(ids!(content.right_panel.provider_view.content)).set_visible(cx, false);
+                    self.view.view(ids!(content.right_panel.provider_view.empty_state)).set_visible(cx, true);
+                    self.view.label(ids!(content.right_panel.provider_view.provider_name)).set_text(cx, "Select a Provider");
                     self.view.redraw(cx);
                 }
             }
@@ -326,16 +371,16 @@ impl SettingsScreen {
 
     fn sync_models(&mut self, cx: &mut Cx) {
         // Check if API key is provided
-        let api_key = self.view.text_input(ids!(content.provider_view.api_key_input)).text();
+        let api_key = self.view.text_input(ids!(content.right_panel.provider_view.api_key_input)).text();
         if api_key.is_empty() {
-            self.view.label(ids!(content.provider_view.sync_status)).set_text(cx, "Enter API key to sync models");
+            self.view.label(ids!(content.right_panel.provider_view.sync_status)).set_text(cx, "Enter API key to sync models");
             self.view.redraw(cx);
             return;
         }
 
         // Set syncing state
-        self.view.label(ids!(content.provider_view.sync_status)).set_text(cx, "Syncing models...");
-        self.view.button(ids!(content.provider_view.sync_button)).apply_over(cx, live!{
+        self.view.label(ids!(content.right_panel.provider_view.sync_status)).set_text(cx, "Syncing models...");
+        self.view.button(ids!(content.right_panel.provider_view.sync_button)).apply_over(cx, live!{
             draw_bg: { disabled: 1.0 }
         });
         self.view.redraw(cx);
@@ -389,17 +434,17 @@ impl SettingsScreen {
         }
 
         // Update the no_models_label visibility and sync status
-        self.view.label(ids!(content.provider_view.no_models_label)).set_visible(cx, models.is_empty());
+        self.view.label(ids!(content.right_panel.provider_view.no_models_label)).set_visible(cx, models.is_empty());
 
         // Update sync status
         if models.is_empty() {
-            self.view.label(ids!(content.provider_view.sync_status)).set_text(cx, "No models found");
+            self.view.label(ids!(content.right_panel.provider_view.sync_status)).set_text(cx, "No models found");
         } else {
-            self.view.label(ids!(content.provider_view.sync_status)).set_text(cx, &format!("Found {} models", models.len()));
+            self.view.label(ids!(content.right_panel.provider_view.sync_status)).set_text(cx, &format!("Found {} models", models.len()));
         }
 
         // Re-enable sync button
-        self.view.button(ids!(content.provider_view.sync_button)).apply_over(cx, live!{
+        self.view.button(ids!(content.right_panel.provider_view.sync_button)).apply_over(cx, live!{
             draw_bg: { disabled: 0.0 }
         });
 
@@ -445,7 +490,11 @@ impl SettingsScreenRef {
                 .update_dark_mode(cx, dark_mode);
 
             // Apply dark mode to provider view
-            inner.view.provider_view(ids!(content.provider_view))
+            inner.view.provider_view(ids!(content.right_panel.provider_view))
+                .update_dark_mode(cx, dark_mode);
+
+            // Apply dark mode to models view
+            inner.view.models_view(ids!(content.right_panel.models_view))
                 .update_dark_mode(cx, dark_mode);
 
             // Apply dark mode to add provider modal

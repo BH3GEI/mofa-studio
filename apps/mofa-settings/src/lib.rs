@@ -2,6 +2,7 @@
 
 pub mod add_provider_modal;
 pub mod data;
+pub mod models_view;
 pub mod provider_view;
 pub mod providers_panel;
 pub mod screen;
@@ -30,6 +31,7 @@ impl MofaApp for MoFaSettingsApp {
     fn live_design(cx: &mut Cx) {
         providers_panel::live_design(cx);
         provider_view::live_design(cx);
+        models_view::live_design(cx);
         add_provider_modal::live_design(cx);
         screen::live_design(cx);
     }

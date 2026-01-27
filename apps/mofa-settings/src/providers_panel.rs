@@ -267,7 +267,7 @@ live_design! {
 
         // Scrollable provider list
         scroll_view = <ScrollYView> {
-            width: Fill, height: Fill
+            width: Fill, height: Fit
             flow: Down
             spacing: 0
             scroll_bars: <ScrollBars> {
@@ -348,19 +348,19 @@ live_design! {
                 width: Fill, height: Fit
                 flow: Down
                 spacing: 0
-                visible: true  // Start visible for area calculation
+                visible: false  // Hidden by default, shown when there are custom providers
 
-                // Static custom provider items (up to 10 slots)
-                custom_provider_1 = <CustomProviderItem> {}
-                custom_provider_2 = <CustomProviderItem> {}
-                custom_provider_3 = <CustomProviderItem> {}
-                custom_provider_4 = <CustomProviderItem> {}
-                custom_provider_5 = <CustomProviderItem> {}
-                custom_provider_6 = <CustomProviderItem> {}
-                custom_provider_7 = <CustomProviderItem> {}
-                custom_provider_8 = <CustomProviderItem> {}
-                custom_provider_9 = <CustomProviderItem> {}
-                custom_provider_10 = <CustomProviderItem> {}
+                // Static custom provider items (up to 10 slots) - all hidden by default
+                custom_provider_1 = <CustomProviderItem> { visible: false }
+                custom_provider_2 = <CustomProviderItem> { visible: false }
+                custom_provider_3 = <CustomProviderItem> { visible: false }
+                custom_provider_4 = <CustomProviderItem> { visible: false }
+                custom_provider_5 = <CustomProviderItem> { visible: false }
+                custom_provider_6 = <CustomProviderItem> { visible: false }
+                custom_provider_7 = <CustomProviderItem> { visible: false }
+                custom_provider_8 = <CustomProviderItem> { visible: false }
+                custom_provider_9 = <CustomProviderItem> { visible: false }
+                custom_provider_10 = <CustomProviderItem> { visible: false }
             }
 
         }
@@ -418,15 +418,14 @@ impl Widget for ProvidersPanel {
 
         // Provider items for hover and click handling
         let items = [
-            ids!(scroll_view.list_container.openai_item),
-            ids!(scroll_view.list_container.deepseek_item),
-            ids!(scroll_view.list_container.alibaba_item),
-            ids!(scroll_view.list_container.nvidia_item),
+            (ids!(scroll_view.list_container.openai_item), "openai"),
+            (ids!(scroll_view.list_container.deepseek_item), "deepseek"),
+            (ids!(scroll_view.list_container.alibaba_item), "alibaba_cloud"),
+            (ids!(scroll_view.list_container.nvidia_item), "nvidia"),
         ];
 
-        // Handle hover effects for built-in providers
-        for item_id in items.iter() {
-            let item = self.view.view(item_id.clone());
+        for (item_id, provider_name) in items.iter() {
+            let item = self.view.view(*item_id);
             match event.hits(cx, item.area()) {
                 Hit::FingerHoverIn(_) => {
                     let is_selected = self.is_builtin_item_selected(*item_id);
@@ -440,11 +439,19 @@ impl Widget for ProvidersPanel {
                         self.apply_item_hover(cx, *item_id, false);
                     }
                 }
+                Hit::FingerUp(_) => {
+                    let id = ProviderId::from(*provider_name);
+                    if self.selected_provider_id.as_ref() != Some(&id) {
+                        self.select_provider_internal(cx, &id);
+                    }
+                    cx.widget_action(uid, &scope.path, ProvidersPanelAction::Selected(id));
+                    return;
+                }
                 _ => {}
             }
         }
 
-        // Handle hover for custom header (target the header_bg view)
+        // Handle hover and click for custom header (expand/collapse)
         let header_bg = self.view.view(ids!(scroll_view.custom_header));
         match event.hits(cx, header_bg.area()) {
             Hit::FingerHoverIn(_) => {
@@ -459,10 +466,25 @@ impl Widget for ProvidersPanel {
                 });
                 self.view.redraw(cx);
             }
+            Hit::FingerUp(_) => {
+                self.custom_section_expanded = !self.custom_section_expanded;
+                self.view.view(ids!(scroll_view.custom_section)).set_visible(cx, self.custom_section_expanded);
+
+                if self.custom_section_expanded {
+                    self.view.label(ids!(scroll_view.custom_header.header_content.header_label)).set_text(cx, "Show Less");
+                    self.view.label(ids!(scroll_view.custom_header.header_content.arrow_label)).set_text(cx, "^");
+                } else {
+                    self.view.label(ids!(scroll_view.custom_header.header_content.header_label)).set_text(cx, "Show More");
+                    self.view.label(ids!(scroll_view.custom_header.header_content.arrow_label)).set_text(cx, ">");
+                }
+
+                self.view.redraw(cx);
+                return;
+            }
             _ => {}
         }
 
-        // Handle hover for add button
+        // Handle hover and click for add button
         let add_button = self.view.view(ids!(add_button));
         match event.hits(cx, add_button.area()) {
             Hit::FingerHoverIn(_) => {
@@ -477,10 +499,14 @@ impl Widget for ProvidersPanel {
                 });
                 self.view.redraw(cx);
             }
+            Hit::FingerUp(_) => {
+                cx.widget_action(uid, &scope.path, ProvidersPanelAction::AddProviderClicked);
+                return;
+            }
             _ => {}
         }
 
-        // Handle hover for custom provider items (manual, like built-in providers)
+        // Handle hover and click for custom provider items
         let custom_items = [
             ids!(scroll_view.custom_section.custom_provider_1),
             ids!(scroll_view.custom_section.custom_provider_2),
@@ -504,7 +530,6 @@ impl Widget for ProvidersPanel {
                 Hit::FingerHoverIn(_) => {
                     let is_selected = self.selected_provider_id.as_ref() == Some(&self.custom_providers[i].id);
                     if !is_selected {
-                        // Use instance variable for hover effect
                         self.view.view(*path).apply_over(cx, live!{
                             draw_bg: { hover: 1.0 }
                         });
@@ -514,97 +539,23 @@ impl Widget for ProvidersPanel {
                 Hit::FingerHoverOut(_) => {
                     let is_selected = self.selected_provider_id.as_ref() == Some(&self.custom_providers[i].id);
                     if !is_selected {
-                        // Reset hover state
                         self.view.view(*path).apply_over(cx, live!{
                             draw_bg: { hover: 0.0 }
                         });
                         self.view.redraw(cx);
                     }
                 }
+                Hit::FingerUp(_) => {
+                    let provider_id = self.custom_providers[i].id.clone();
+                    if self.selected_provider_id.as_ref() != Some(&provider_id) {
+                        self.select_provider_internal(cx, &provider_id);
+                    }
+                    cx.widget_action(uid, &scope.path, ProvidersPanelAction::Selected(provider_id));
+                    return;
+                }
                 _ => {}
             }
         }
-
-        // Extract actions - return early if not an Actions event
-        let actions = match event {
-            Event::Actions(actions) => actions.as_slice(),
-            _ => return,
-        };
-
-        // Handle custom header click (expand/collapse) - match sidebar pattern
-        if self.view.view(ids!(scroll_view.custom_header)).finger_up(actions).is_some() {
-            self.custom_section_expanded = !self.custom_section_expanded;
-            self.view.view(ids!(scroll_view.custom_section)).set_visible(cx, self.custom_section_expanded);
-
-            // Update text and arrow like sidebar
-            if self.custom_section_expanded {
-                self.view.label(ids!(scroll_view.custom_header.header_content.header_label)).set_text(cx, "Show Less");
-                self.view.label(ids!(scroll_view.custom_header.header_content.arrow_label)).set_text(cx, "^");
-            } else {
-                self.view.label(ids!(scroll_view.custom_header.header_content.header_label)).set_text(cx, "Show More");
-                self.view.label(ids!(scroll_view.custom_header.header_content.arrow_label)).set_text(cx, ">");
-            }
-
-            self.view.redraw(cx);
-        }
-
-        // Handle add button click
-        if self.view.view(ids!(add_button)).finger_up(actions).is_some() {
-            cx.widget_action(uid, &scope.path, ProvidersPanelAction::AddProviderClicked);
-        }
-
-        // Handle provider item clicks
-        let mut new_selection: Option<ProviderId> = None;
-
-        if self.view.view(ids!(scroll_view.list_container.openai_item)).finger_up(actions).is_some() {
-            new_selection = Some(ProviderId::from("openai"));
-        }
-        if self.view.view(ids!(scroll_view.list_container.deepseek_item)).finger_up(actions).is_some() {
-            new_selection = Some(ProviderId::from("deepseek"));
-        }
-        if self.view.view(ids!(scroll_view.list_container.alibaba_item)).finger_up(actions).is_some() {
-            new_selection = Some(ProviderId::from("alibaba_cloud"));
-        }
-        if self.view.view(ids!(scroll_view.list_container.nvidia_item)).finger_up(actions).is_some() {
-            new_selection = Some(ProviderId::from("nvidia"));
-        }
-
-        if let Some(id) = new_selection {
-            if self.selected_provider_id.as_ref() != Some(&id) {
-                self.select_provider_internal(cx, &id);
-                cx.widget_action(uid, &scope.path, ProvidersPanelAction::Selected(id));
-            }
-        }
-
-        // Handle custom provider item clicks (View with finger_up, like built-in providers)
-        macro_rules! handle_custom_provider_click {
-            ($self:expr, $cx:expr, $actions:expr, $uid:expr, $scope:expr, $($idx:expr => $path:expr),+ $(,)?) => {
-                $(
-                    if $self.view.view($path).finger_up($actions).is_some() {
-                        if $idx < $self.custom_providers.len() {
-                            let provider_id = $self.custom_providers[$idx].id.clone();
-                            if $self.selected_provider_id.as_ref() != Some(&provider_id) {
-                                $self.select_provider_internal($cx, &provider_id);
-                                $cx.widget_action($uid, &$scope.path, ProvidersPanelAction::Selected(provider_id));
-                            }
-                        }
-                    }
-                )+
-            };
-        }
-
-        handle_custom_provider_click!(self, cx, actions, uid, scope,
-            0 => ids!(scroll_view.custom_section.custom_provider_1),
-            1 => ids!(scroll_view.custom_section.custom_provider_2),
-            2 => ids!(scroll_view.custom_section.custom_provider_3),
-            3 => ids!(scroll_view.custom_section.custom_provider_4),
-            4 => ids!(scroll_view.custom_section.custom_provider_5),
-            5 => ids!(scroll_view.custom_section.custom_provider_6),
-            6 => ids!(scroll_view.custom_section.custom_provider_7),
-            7 => ids!(scroll_view.custom_section.custom_provider_8),
-            8 => ids!(scroll_view.custom_section.custom_provider_9),
-            9 => ids!(scroll_view.custom_section.custom_provider_10),
-        );
     }
 
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
@@ -679,6 +630,11 @@ impl ProvidersPanel {
             });
         }
 
+        // Reset local models item
+        self.view.view(ids!(local_models_item)).apply_over(cx, live!{
+            draw_bg: { selected: 0.0, hover: 0.0 }
+        });
+
         // Apply selected color to the selected item
         let selected = provider_id.as_str();
         match selected {
@@ -717,6 +673,53 @@ impl ProvidersPanel {
 
         self.selected_provider_id = Some(provider_id.clone());
         self.view.redraw(cx);
+    }
+
+    fn clear_all_selections(&mut self, cx: &mut Cx) {
+        // Reset all built-in items
+        let items = [
+            ids!(scroll_view.list_container.openai_item),
+            ids!(scroll_view.list_container.deepseek_item),
+            ids!(scroll_view.list_container.alibaba_item),
+            ids!(scroll_view.list_container.nvidia_item),
+        ];
+
+        let normal_color = if self.dark_mode {
+            vec4(0.12, 0.16, 0.23, 1.0)
+        } else {
+            vec4(1.0, 1.0, 1.0, 1.0)
+        };
+
+        for item_id in &items {
+            self.view.view(item_id.clone()).apply_over(cx, live!{
+                draw_bg: { color: (normal_color) }
+            });
+        }
+
+        // Reset all custom provider items
+        let custom_items = [
+            ids!(scroll_view.custom_section.custom_provider_1),
+            ids!(scroll_view.custom_section.custom_provider_2),
+            ids!(scroll_view.custom_section.custom_provider_3),
+            ids!(scroll_view.custom_section.custom_provider_4),
+            ids!(scroll_view.custom_section.custom_provider_5),
+            ids!(scroll_view.custom_section.custom_provider_6),
+            ids!(scroll_view.custom_section.custom_provider_7),
+            ids!(scroll_view.custom_section.custom_provider_8),
+            ids!(scroll_view.custom_section.custom_provider_9),
+            ids!(scroll_view.custom_section.custom_provider_10),
+        ];
+
+        for path in &custom_items {
+            self.view.view(*path).apply_over(cx, live!{
+                draw_bg: { selected: 0.0, hover: 0.0 }
+            });
+        }
+
+        // Reset local models item
+        self.view.view(ids!(local_models_item)).apply_over(cx, live!{
+            draw_bg: { selected: 0.0, hover: 0.0 }
+        });
     }
 }
 
