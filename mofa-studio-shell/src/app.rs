@@ -42,11 +42,16 @@ use mofa_debate::MoFaDebateApp;
 use mofa_settings::MoFaSettingsApp;
 use mofa_webview_demo::MoFaWebViewDemoApp;
 use mofa_personal_news::MoFaPersonalNewsApp;
+use mofa_personal_news::screen::PersonalNewsScreenWidgetRefExt;
 use mofa_transcriber::MoFaTranscriberApp;
+use mofa_transcriber::screen::TranscriberScreenWidgetRefExt;
 use mofa_podcast::MoFaPodcastApp;
 use mofa_podcast_factory::MoFaPodcastFactoryApp;
+use mofa_podcast_factory::screen::PodcastFactoryScreenWidgetRefExt;
 use mofa_note_taker::MoFaNoteTakerApp;
+use mofa_note_taker::screen::NoteTakerScreenWidgetRefExt;
 use mofa_hello_world::MoFaHelloWorldApp;
+use mofa_hello_world::screen::HelloWorldScreenWidgetRefExt;
 use mofa_settings::data::Preferences;
 use mofa_settings::screen::SettingsScreenWidgetRefExt;
 
@@ -861,6 +866,18 @@ impl App {
                 .set_active(cx, false);
         }
 
+        // Deactivate WebView when leaving Note Taker page
+        if old_page == Some(PageId::NoteTaker) {
+            self.ui.web_view_container(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.note_taker_page.content.webview_area.webview_wrapper.webview))
+                .set_active(cx, false);
+        }
+
+        // Deactivate WebView when leaving Hello World page
+        if old_page == Some(PageId::HelloWorld) {
+            self.ui.web_view_container(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.hello_world_page.content.webview_area.webview_wrapper.webview))
+                .set_active(cx, false);
+        }
+
         // Deactivate Plugin WebView when leaving Plugin page
         if old_page == Some(PageId::Plugin) {
             self.ui.plugin_screen(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.plugin_page))
@@ -888,18 +905,40 @@ impl App {
         if page == PageId::PersonalNews {
             self.ui.web_view_container(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.personal_news_page.content.webview_area.webview_wrapper.webview))
                 .set_active(cx, true);
+            self.ui.personal_news_screen(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.personal_news_page))
+                .start_server(cx);
         }
 
         // Activate WebView when entering Transcriber page
         if page == PageId::Transcriber {
             self.ui.web_view_container(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.transcriber_page.content.webview_area.webview_wrapper.webview))
                 .set_active(cx, true);
+            self.ui.transcriber_screen(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.transcriber_page))
+                .start_server(cx);
         }
 
         // Activate WebView when entering Podcast Factory page
         if page == PageId::PodcastFactory {
             self.ui.web_view_container(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.podcast_factory_page.content.webview_area.webview_wrapper.webview))
                 .set_active(cx, true);
+            self.ui.podcast_factory_screen(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.podcast_factory_page))
+                .start_server(cx);
+        }
+
+        // Activate WebView when entering Note Taker page
+        if page == PageId::NoteTaker {
+            self.ui.web_view_container(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.note_taker_page.content.webview_area.webview_wrapper.webview))
+                .set_active(cx, true);
+            self.ui.note_taker_screen(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.note_taker_page))
+                .start_server(cx);
+        }
+
+        // Activate WebView when entering Hello World page
+        if page == PageId::HelloWorld {
+            self.ui.web_view_container(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.hello_world_page.content.webview_area.webview_wrapper.webview))
+                .set_active(cx, true);
+            self.ui.hello_world_screen(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.hello_world_page))
+                .start_server(cx);
         }
 
         // Activate PluginScreen WebView when entering Plugin page
@@ -934,6 +973,10 @@ impl App {
             .apply_over(cx, live!{ visible: (current == Some(PageId::Podcast)) });
         self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.podcast_factory_page))
             .apply_over(cx, live!{ visible: (current == Some(PageId::PodcastFactory)) });
+        self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.note_taker_page))
+            .apply_over(cx, live!{ visible: (current == Some(PageId::NoteTaker)) });
+        self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.hello_world_page))
+            .apply_over(cx, live!{ visible: (current == Some(PageId::HelloWorld)) });
         self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.plugin_page))
             .apply_over(cx, live!{ visible: (current == Some(PageId::Plugin)) });
     }
@@ -1007,6 +1050,8 @@ impl App {
             PageId::Transcriber => ("AI Transcriber", "Audio/video transcription and summarization"),
             PageId::Podcast => ("Podcast Generator", "Generate podcast audio from scripts"),
             PageId::PodcastFactory => ("Book Cast", "Transform books into podcast series"),
+            PageId::NoteTaker => ("Note Taker", "Web-based note taking workspace"),
+            PageId::HelloWorld => ("Hello World", "WebView demo starter app"),
             PageId::Plugin => ("Plugin", "Dynamic plugin"),
         };
 

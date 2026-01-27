@@ -230,42 +230,56 @@ live_design! {
             debate_tab = <SidebarMenuButton> {
                 text: "Debate"
                 draw_icon: {
-                    svg_file: dep("crate://self/resources/icons/app.svg")
+                    svg_file: dep("crate://self/resources/icons/chat.svg")
                 }
             }
 
             webview_demo_tab = <SidebarMenuButton> {
                 text: "WebView"
                 draw_icon: {
-                    svg_file: dep("crate://self/resources/icons/app.svg")
+                    svg_file: dep("crate://self/resources/icons/webview.svg")
                 }
             }
 
             personal_news_tab = <SidebarMenuButton> {
                 text: "Personal News"
                 draw_icon: {
-                    svg_file: dep("crate://self/resources/icons/app.svg")
+                    svg_file: dep("crate://self/resources/icons/user.svg")
                 }
             }
 
             transcriber_tab = <SidebarMenuButton> {
                 text: "Transcriber"
                 draw_icon: {
-                    svg_file: dep("crate://self/resources/icons/app.svg")
+                    svg_file: dep("crate://self/resources/icons/mic.svg")
                 }
             }
 
             podcast_tab = <SidebarMenuButton> {
                 text: "Podcast"
                 draw_icon: {
-                    svg_file: dep("crate://self/resources/icons/app.svg")
+                    svg_file: dep("crate://self/resources/icons/play.svg")
                 }
             }
 
             podcast_factory_tab = <SidebarMenuButton> {
                 text: "Book Cast"
                 draw_icon: {
+                    svg_file: dep("crate://self/resources/icons/radio.svg")
+                }
+            }
+
+            note_taker_tab = <SidebarMenuButton> {
+                text: "Note Taker"
+                draw_icon: {
                     svg_file: dep("crate://self/resources/icons/app.svg")
+                }
+            }
+
+            hello_world_tab = <SidebarMenuButton> {
+                text: "Hello World"
+                draw_icon: {
+                    svg_file: dep("crate://self/resources/icons/start.svg")
                 }
             }
 
@@ -286,16 +300,15 @@ live_design! {
                     }
 
                     // First 4 apps - always visible
-                    app1_btn = <SidebarMenuButton> { text: "App 1", draw_icon: { svg_file: dep("crate://self/resources/icons/app.svg") } }
-                    app2_btn = <SidebarMenuButton> { text: "App 2", draw_icon: { svg_file: dep("crate://self/resources/icons/app.svg") } }
-                    app3_btn = <SidebarMenuButton> { text: "App 3", draw_icon: { svg_file: dep("crate://self/resources/icons/app.svg") } }
-                    app4_btn = <SidebarMenuButton> { text: "App 4", draw_icon: { svg_file: dep("crate://self/resources/icons/app.svg") } }
+                    app1_btn = <SidebarMenuButton> { text: "App 1" }
+                    app2_btn = <SidebarMenuButton> { text: "App 2" }
+                    app3_btn = <SidebarMenuButton> { text: "App 3" }
+                    app4_btn = <SidebarMenuButton> { text: "App 4" }
 
                     // Pinned app from "Show More" section - appears when an app from expanded section is selected
                     pinned_app_btn = <SidebarMenuButton> {
                         visible: false
                         text: ""
-                        draw_icon: { svg_file: dep("crate://self/resources/icons/app.svg") }
                     }
 
                     // Show More button
@@ -308,22 +321,22 @@ live_design! {
                         spacing: 4
                         visible: false
 
-                        app5_btn = <SidebarMenuButton> { text: "App 5", draw_icon: { svg_file: dep("crate://self/resources/icons/app.svg") } }
-                        app6_btn = <SidebarMenuButton> { text: "App 6", draw_icon: { svg_file: dep("crate://self/resources/icons/app.svg") } }
-                        app7_btn = <SidebarMenuButton> { text: "App 7", draw_icon: { svg_file: dep("crate://self/resources/icons/app.svg") } }
-                        app8_btn = <SidebarMenuButton> { text: "App 8", draw_icon: { svg_file: dep("crate://self/resources/icons/app.svg") } }
-                        app9_btn = <SidebarMenuButton> { text: "App 9", draw_icon: { svg_file: dep("crate://self/resources/icons/app.svg") } }
-                        app10_btn = <SidebarMenuButton> { text: "App 10", draw_icon: { svg_file: dep("crate://self/resources/icons/app.svg") } }
-                        app11_btn = <SidebarMenuButton> { text: "App 11", draw_icon: { svg_file: dep("crate://self/resources/icons/app.svg") } }
-                        app12_btn = <SidebarMenuButton> { text: "App 12", draw_icon: { svg_file: dep("crate://self/resources/icons/app.svg") } }
-                        app13_btn = <SidebarMenuButton> { text: "App 13", draw_icon: { svg_file: dep("crate://self/resources/icons/app.svg") } }
-                        app14_btn = <SidebarMenuButton> { text: "App 14", draw_icon: { svg_file: dep("crate://self/resources/icons/app.svg") } }
-                        app15_btn = <SidebarMenuButton> { text: "App 15", draw_icon: { svg_file: dep("crate://self/resources/icons/app.svg") } }
-                        app16_btn = <SidebarMenuButton> { text: "App 16", draw_icon: { svg_file: dep("crate://self/resources/icons/app.svg") } }
-                        app17_btn = <SidebarMenuButton> { text: "App 17", draw_icon: { svg_file: dep("crate://self/resources/icons/app.svg") } }
-                        app18_btn = <SidebarMenuButton> { text: "App 18", draw_icon: { svg_file: dep("crate://self/resources/icons/app.svg") } }
-                        app19_btn = <SidebarMenuButton> { text: "App 19", draw_icon: { svg_file: dep("crate://self/resources/icons/app.svg") } }
-                        app20_btn = <SidebarMenuButton> { text: "App 20", draw_icon: { svg_file: dep("crate://self/resources/icons/app.svg") } }
+                        app5_btn = <SidebarMenuButton> { text: "App 5" }
+                        app6_btn = <SidebarMenuButton> { text: "App 6" }
+                        app7_btn = <SidebarMenuButton> { text: "App 7" }
+                        app8_btn = <SidebarMenuButton> { text: "App 8" }
+                        app9_btn = <SidebarMenuButton> { text: "App 9" }
+                        app10_btn = <SidebarMenuButton> { text: "App 10" }
+                        app11_btn = <SidebarMenuButton> { text: "App 11" }
+                        app12_btn = <SidebarMenuButton> { text: "App 12" }
+                        app13_btn = <SidebarMenuButton> { text: "App 13" }
+                        app14_btn = <SidebarMenuButton> { text: "App 14" }
+                        app15_btn = <SidebarMenuButton> { text: "App 15" }
+                        app16_btn = <SidebarMenuButton> { text: "App 16" }
+                        app17_btn = <SidebarMenuButton> { text: "App 17" }
+                        app18_btn = <SidebarMenuButton> { text: "App 18" }
+                        app19_btn = <SidebarMenuButton> { text: "App 19" }
+                        app20_btn = <SidebarMenuButton> { text: "App 20" }
                     }
                 }
             }
@@ -360,6 +373,8 @@ pub enum SidebarSelection {
     Transcriber,
     Podcast,
     PodcastFactory,
+    NoteTaker,
+    HelloWorld,
     App(usize), // 1-20
     Plugin(String), // Plugin ID
     Settings,
@@ -573,6 +588,24 @@ impl Widget for Sidebar {
             self.handle_selection(cx, SidebarSelection::PodcastFactory);
         }
 
+        // Handle Note Taker tab click
+        if self
+            .view
+            .button(ids!(main_content.note_taker_tab))
+            .clicked(actions)
+        {
+            self.handle_selection(cx, SidebarSelection::NoteTaker);
+        }
+
+        // Handle Hello World tab click
+        if self
+            .view
+            .button(ids!(main_content.hello_world_tab))
+            .clicked(actions)
+        {
+            self.handle_selection(cx, SidebarSelection::HelloWorld);
+        }
+
         // Handle Settings tab click
         if self.view.button(ids!(settings_tab)).clicked(actions) {
             self.handle_selection(cx, SidebarSelection::Settings);
@@ -732,6 +765,24 @@ impl Sidebar {
                     .button(ids!(main_content.apps_wrapper.apps_scroll.pinned_app_btn))
                     .set_visible(cx, false);
             }
+            SidebarSelection::NoteTaker => {
+                self.view
+                    .button(ids!(main_content.note_taker_tab))
+                    .apply_over(cx, live! { draw_bg: { selected: 1.0 } });
+                self.pinned_app_name = None;
+                self.view
+                    .button(ids!(main_content.apps_wrapper.apps_scroll.pinned_app_btn))
+                    .set_visible(cx, false);
+            }
+            SidebarSelection::HelloWorld => {
+                self.view
+                    .button(ids!(main_content.hello_world_tab))
+                    .apply_over(cx, live! { draw_bg: { selected: 1.0 } });
+                self.pinned_app_name = None;
+                self.view
+                    .button(ids!(main_content.apps_wrapper.apps_scroll.pinned_app_btn))
+                    .set_visible(cx, false);
+            }
             SidebarSelection::App(app_idx) => {
                 self.set_app_button_selected(cx, *app_idx, true);
 
@@ -802,7 +853,7 @@ impl Sidebar {
             };
         }
 
-        // Clear MoFA FM, Debate, WebView Demo, Personal News, Transcriber, Podcast, Podcast Factory, Settings, and pinned app
+        // Clear MoFA FM, Debate, WebView Demo, Personal News, Transcriber, Podcast, Podcast Factory, Note Taker, Hello World, Settings, and pinned app
         clear_selection!(
             self,
             cx,
@@ -813,6 +864,8 @@ impl Sidebar {
             ids!(main_content.transcriber_tab),
             ids!(main_content.podcast_tab),
             ids!(main_content.podcast_factory_tab),
+            ids!(main_content.note_taker_tab),
+            ids!(main_content.hello_world_tab),
             ids!(settings_tab),
             ids!(main_content.apps_wrapper.apps_scroll.pinned_app_btn)
         );
@@ -1239,6 +1292,18 @@ impl SidebarRef {
                         inner
                             .view
                             .button(ids!(main_content.podcast_factory_tab))
+                            .apply_over(cx, live! { draw_bg: { selected: 1.0 } });
+                    }
+                    SidebarSelection::NoteTaker => {
+                        inner
+                            .view
+                            .button(ids!(main_content.note_taker_tab))
+                            .apply_over(cx, live! { draw_bg: { selected: 1.0 } });
+                    }
+                    SidebarSelection::HelloWorld => {
+                        inner
+                            .view
+                            .button(ids!(main_content.hello_world_tab))
                             .apply_over(cx, live! { draw_bg: { selected: 1.0 } });
                     }
                     SidebarSelection::App(app_idx) => {

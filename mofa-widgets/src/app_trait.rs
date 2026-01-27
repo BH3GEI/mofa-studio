@@ -112,6 +112,10 @@ pub enum PageId {
     Podcast,
     /// Podcast Factory page (multi-episode series generator)
     PodcastFactory,
+    /// Note Taker page
+    NoteTaker,
+    /// Hello World page
+    HelloWorld,
     /// Dynamic plugin page (for WebView plugins)
     Plugin,
 }
@@ -129,6 +133,8 @@ impl PageId {
             PageId::Transcriber => live_id!(transcriber_tab),
             PageId::Podcast => live_id!(podcast_tab),
             PageId::PodcastFactory => live_id!(podcast_factory_tab),
+            PageId::NoteTaker => live_id!(note_taker_tab),
+            PageId::HelloWorld => live_id!(hello_world_tab),
             PageId::Plugin => live_id!(plugin_tab),
         }
     }
@@ -145,6 +151,8 @@ impl PageId {
             PageId::Transcriber => live_id!(transcriber_page),
             PageId::Podcast => live_id!(podcast_page),
             PageId::PodcastFactory => live_id!(podcast_factory_page),
+            PageId::NoteTaker => live_id!(note_taker_page),
+            PageId::HelloWorld => live_id!(hello_world_page),
             PageId::Plugin => live_id!(plugin_page),
         }
     }
@@ -165,7 +173,20 @@ impl PageRouter {
     pub fn new() -> Self {
         Self {
             current_page: Some(PageId::MofaFM), // Default to FM
-            pages: vec![PageId::MofaFM, PageId::Debate, PageId::Settings, PageId::App, PageId::WebViewDemo, PageId::PersonalNews, PageId::Transcriber, PageId::Podcast, PageId::PodcastFactory, PageId::Plugin],
+            pages: vec![
+                PageId::MofaFM,
+                PageId::Debate,
+                PageId::Settings,
+                PageId::App,
+                PageId::WebViewDemo,
+                PageId::PersonalNews,
+                PageId::Transcriber,
+                PageId::Podcast,
+                PageId::PodcastFactory,
+                PageId::NoteTaker,
+                PageId::HelloWorld,
+                PageId::Plugin,
+            ],
         }
     }
 

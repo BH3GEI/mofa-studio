@@ -732,6 +732,32 @@ impl PersonalNewsScreen {
 }
 
 impl PersonalNewsScreenRef {
+    pub fn start_server(&self, cx: &mut Cx) {
+        if let Some(mut inner) = self.borrow_mut() {
+            let is_running = {
+                let server = inner.server.lock().unwrap();
+                server.is_running()
+            };
+
+            if !is_running {
+                inner.start_server(cx);
+            }
+        }
+    }
+
+    pub fn stop_server(&self, cx: &mut Cx) {
+        if let Some(mut inner) = self.borrow_mut() {
+            let is_running = {
+                let server = inner.server.lock().unwrap();
+                server.is_running()
+            };
+
+            if is_running {
+                inner.start_server(cx);
+            }
+        }
+    }
+
     pub fn update_dark_mode(&self, cx: &mut Cx, dark_mode: f64) {
         if let Some(mut inner) = self.borrow_mut() {
             // Main background
