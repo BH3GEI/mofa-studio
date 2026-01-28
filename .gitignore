@@ -50,3 +50,7 @@ setup.py
 # Local env dirs
 .venv-mofa/
 .nix-mofa/
+
+# External frontend deps
+external/alzheimer-frontend/node_modules/
+external/alzheimer-frontend/node_modules/

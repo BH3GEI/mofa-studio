@@ -1,0 +1,53 @@
+{
+  "name": "alzheimer-prevention-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Frontend for Alzheimer's prevention through daily conversation",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint src/**/*.{ts,tsx}",
+    "format": "prettier --write src/**/*.{ts,tsx}"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.15.0",
+    "axios": "^1.5.0",
+    "socket.io-client": "^4.6.1",
+    "recharts": "^2.8.0",
+    "date-fns": "^2.30.0",
+    "clsx": "^2.0.0",
+    "tailwindcss": "^3.3.3",
+    "autoprefixer": "^10.4.15",
+    "postcss": "^8.4.29",
+    "react-hook-form": "^7.45.4",
+    "zod": "^3.22.2",
+    "@hookform/resolvers": "^3.3.2",
+    "react-hot-toast": "^2.4.1",
+    "lucide-react": "^0.294.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
+    "@typescript-eslint/eslint-plugin": "^6.4.0",
+    "@typescript-eslint/parser": "^6.4.0",
+    "@vitejs/plugin-react": "^4.0.4",
+    "eslint": "^8.47.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.3",
+    "prettier": "^3.0.2",
+    "typescript": "^5.2.2",
+    "vite": "^4.4.9"
+  },
+  "keywords": [
+    "alzheimer",
+    "prevention",
+    "cognitive",
+    "assessment",
+    "healthcare"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
