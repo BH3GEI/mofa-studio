@@ -1048,14 +1048,12 @@ impl App {
             vec![]
         };
 
-        if !plugins.is_empty() {
-            ::log::info!("Setting up {} plugins in sidebar", plugins.len());
-            // Set plugins in both sidebars
-            self.ui.sidebar(ids!(sidebar_menu_overlay.sidebar_content))
-                .set_plugins(cx, plugins.clone());
-            self.ui.sidebar(ids!(pinned_sidebar.pinned_sidebar_content))
-                .set_plugins(cx, plugins);
-        }
+        ::log::info!("Setting up {} plugins in sidebar", plugins.len());
+        // Set plugins in both sidebars (even empty, so placeholders can be hidden)
+        self.ui.sidebar(ids!(sidebar_menu_overlay.sidebar_content))
+            .set_plugins(cx, plugins.clone());
+        self.ui.sidebar(ids!(pinned_sidebar.pinned_sidebar_content))
+            .set_plugins(cx, plugins);
     }
 
     /// Update hero title panel with current app info

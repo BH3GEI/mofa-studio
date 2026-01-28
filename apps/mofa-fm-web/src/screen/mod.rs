@@ -300,6 +300,22 @@ fn get_config_path() -> PathBuf {
         .join("mofa-fm-web.json")
 }
 
+const AUTH_USERNAME: &str = "mofa_studio";
+const AUTH_PASSWORD: &str = "mofa_studio#9QNpE3m@6B";
+
+#[derive(Clone)]
+struct AuthCredentials {
+    username: String,
+    password: String,
+}
+
+fn load_auth_config() -> Option<AuthCredentials> {
+    Some(AuthCredentials {
+        username: AUTH_USERNAME.to_string(),
+        password: AUTH_PASSWORD.to_string(),
+    })
+}
+
 fn load_python_config() -> String {
     let config_path = get_config_path();
     if let Ok(content) = fs::read_to_string(&config_path) {
@@ -393,11 +409,25 @@ pub struct MofaFmWebScreen {
 
     #[rust]
     url_loaded: bool,
+
+    #[rust]
+    auto_login_attempted: bool,
+
+    #[rust]
+    pending_auto_login: bool,
+
+    #[rust]
+    auto_login_timer: Timer,
 }
 
 impl Widget for MofaFmWebScreen {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         self.view.handle_event(cx, event, scope);
+
+        if self.auto_login_timer.is_event(event).is_some() && self.pending_auto_login {
+            self.pending_auto_login = false;
+            self.try_auto_login(cx);
+        }
 
         let actions = match event {
             Event::Actions(actions) => actions.as_slice(),
@@ -464,6 +494,7 @@ impl MofaFmWebScreen {
     }
 
     fn load_url(&mut self, cx: &mut Cx) {
+        self.auto_login_attempted = false;
         self.url_loaded = true;
         ::log::info!("Loading URL: {}", Self::TARGET_URL);
 
@@ -472,6 +503,52 @@ impl MofaFmWebScreen {
             self.set_status(cx, &format!("Load error: {}", e), 0.0);
         } else {
             self.set_status(cx, "Loading...", 2.0);
+        }
+
+        self.pending_auto_login = true;
+        self.auto_login_timer = cx.start_timeout(1.0);
+    }
+
+    fn try_auto_login(&mut self, cx: &mut Cx) {
+        if self.auto_login_attempted {
+            return;
+        }
+        let Some(auth) = load_auth_config() else {
+            return;
+        };
+        self.auto_login_attempted = true;
+
+        let payload = serde_json::json!({
+            "username": auth.username,
+            "password": auth.password,
+        });
+
+        let js = format!(
+            r#"(async()=>{{
+try {{
+  if (localStorage.getItem("access_token")) return;
+  const res = await fetch("https://mofa.fm/api/auth/login/", {{
+    method: "POST",
+    headers: {{ "Content-Type": "application/json" }},
+    body: JSON.stringify({})
+  }});
+  if (!res.ok) throw new Error("status " + res.status);
+  const data = await res.json();
+  if (data && data.tokens && data.tokens.access) {{
+    localStorage.setItem("access_token", data.tokens.access);
+    if (data.tokens.refresh) localStorage.setItem("refresh_token", data.tokens.refresh);
+    location.reload();
+  }}
+}} catch (e) {{
+  console.error("[MoFA.fm] auto-login failed", e);
+}}
+}})();"#,
+            payload.to_string()
+        );
+
+        let webview = self.view.web_view_container(ids!(content.webview_area.webview_wrapper.webview));
+        if let Err(e) = webview.eval(&js) {
+            self.set_status(cx, &format!("Auto-login error: {}", e), 0.0);
         }
     }
 

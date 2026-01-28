@@ -228,7 +228,7 @@ live_design! {
             }
 
             mofa_fm_web_tab = <SidebarMenuButton> {
-                text: "MoFA.fm"
+                text: "MoFA FM (Web)"
                 draw_icon: {
                     svg_file: dep("crate://self/resources/icons/webview.svg")
                 }
@@ -383,7 +383,7 @@ pub enum SidebarSelection {
     PodcastFactory,
     NoteTaker,
     HelloWorld,
-    App(usize), // 1-20
+    App(usize),     // 1-20
     Plugin(String), // Plugin ID
     Settings,
 }
@@ -1174,6 +1174,21 @@ impl SidebarRef {
         if let Some(mut inner) = self.borrow_mut() {
             inner.plugins = plugins.clone();
 
+            let show_apps = !plugins.is_empty();
+            inner
+                .view
+                .view(ids!(main_content.apps_wrapper))
+                .set_visible(cx, show_apps);
+            if !show_apps {
+                inner.more_apps_visible = false;
+                inner
+                    .view
+                    .view(ids!(
+                        main_content.apps_wrapper.apps_scroll.more_apps_section
+                    ))
+                    .set_visible(cx, false);
+            }
+
             // Update app buttons to show plugin names
             // We use app1_btn through app4_btn for plugins
             let btn_ids = [
@@ -1185,7 +1200,10 @@ impl SidebarRef {
 
             for (i, btn_path) in btn_ids.iter().enumerate() {
                 if i < plugins.len() {
-                    inner.view.button(btn_path.clone()).set_text(cx, &plugins[i].1);
+                    inner
+                        .view
+                        .button(btn_path.clone())
+                        .set_text(cx, &plugins[i].1);
                     inner.view.button(btn_path.clone()).set_visible(cx, true);
                 } else {
                     // Hide unused buttons
@@ -1194,7 +1212,9 @@ impl SidebarRef {
             }
 
             // Hide the "Show More" section if we only have plugins
-            inner.view.view(ids!(main_content.apps_wrapper.apps_scroll.show_more_btn))
+            inner
+                .view
+                .view(ids!(main_content.apps_wrapper.apps_scroll.show_more_btn))
                 .set_visible(cx, plugins.len() > 4);
 
             inner.view.redraw(cx);
@@ -1367,7 +1387,8 @@ impl SidebarRef {
                     }
                     SidebarSelection::Plugin(plugin_id) => {
                         // Find which button index corresponds to this plugin
-                        if let Some(idx) = inner.plugins.iter().position(|(id, _)| id == &plugin_id) {
+                        if let Some(idx) = inner.plugins.iter().position(|(id, _)| id == &plugin_id)
+                        {
                             inner.set_app_button_selected(cx, idx + 1, true);
                         }
                     }
@@ -1428,49 +1449,64 @@ impl SidebarRef {
             );
 
             // WebView Demo tab
-            inner.view.button(ids!(main_content.webview_demo_tab)).apply_over(
-                cx,
-                live! {
-                    draw_bg: { dark_mode: (dark_mode) }
-                    draw_text: { dark_mode: (dark_mode) }
-                },
-            );
+            inner
+                .view
+                .button(ids!(main_content.webview_demo_tab))
+                .apply_over(
+                    cx,
+                    live! {
+                        draw_bg: { dark_mode: (dark_mode) }
+                        draw_text: { dark_mode: (dark_mode) }
+                    },
+                );
 
             // Personal News tab
-            inner.view.button(ids!(main_content.personal_news_tab)).apply_over(
-                cx,
-                live! {
-                    draw_bg: { dark_mode: (dark_mode) }
-                    draw_text: { dark_mode: (dark_mode) }
-                },
-            );
+            inner
+                .view
+                .button(ids!(main_content.personal_news_tab))
+                .apply_over(
+                    cx,
+                    live! {
+                        draw_bg: { dark_mode: (dark_mode) }
+                        draw_text: { dark_mode: (dark_mode) }
+                    },
+                );
 
             // Transcriber tab
-            inner.view.button(ids!(main_content.transcriber_tab)).apply_over(
-                cx,
-                live! {
-                    draw_bg: { dark_mode: (dark_mode) }
-                    draw_text: { dark_mode: (dark_mode) }
-                },
-            );
+            inner
+                .view
+                .button(ids!(main_content.transcriber_tab))
+                .apply_over(
+                    cx,
+                    live! {
+                        draw_bg: { dark_mode: (dark_mode) }
+                        draw_text: { dark_mode: (dark_mode) }
+                    },
+                );
 
             // Podcast tab
-            inner.view.button(ids!(main_content.podcast_tab)).apply_over(
-                cx,
-                live! {
-                    draw_bg: { dark_mode: (dark_mode) }
-                    draw_text: { dark_mode: (dark_mode) }
-                },
-            );
+            inner
+                .view
+                .button(ids!(main_content.podcast_tab))
+                .apply_over(
+                    cx,
+                    live! {
+                        draw_bg: { dark_mode: (dark_mode) }
+                        draw_text: { dark_mode: (dark_mode) }
+                    },
+                );
 
             // Podcast Factory tab
-            inner.view.button(ids!(main_content.podcast_factory_tab)).apply_over(
-                cx,
-                live! {
-                    draw_bg: { dark_mode: (dark_mode) }
-                    draw_text: { dark_mode: (dark_mode) }
-                },
-            );
+            inner
+                .view
+                .button(ids!(main_content.podcast_factory_tab))
+                .apply_over(
+                    cx,
+                    live! {
+                        draw_bg: { dark_mode: (dark_mode) }
+                        draw_text: { dark_mode: (dark_mode) }
+                    },
+                );
 
             // Settings divider
             inner.view.view(ids!(settings_divider)).apply_over(
