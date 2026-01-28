@@ -2,7 +2,7 @@
 
 本指南说明两种接入方式：
 - 内建 Rust App：需重编译，适合深度整合壳层与原生 UI。
-- 外挂 WebView：无需重编译，适合快速迭代与前后端分离。
+- 外挂 WebView：无需重编译，适合快速迭代与前后端分离（当前后端为 Python HTTP）。
 
 ## 一、内建 Rust App（需重编译）
 
@@ -44,6 +44,15 @@ impl MofaApp for MoFaMyApp {
 
 ### 3. 创建 screen widget
 用 `live_design!` 定义主界面 widget，并实现 `Widget`。
+
+### 3.1 WebView + Rust HTTP Server 模式（无 Python）
+若欲沿用“WebView + 本地 HTTP”之架构而去 Python，可在内建 Rust App 中自启 Rust HTTP Server，并由 WebView 加载：
+- 监听 `127.0.0.1:0` 取空闲端口；
+- 后台线程处理 `/api/*` 与静态文件；
+- `WebViewContainer` 加载 `http://127.0.0.1:{port}/`；
+- 页面切换时启停服务。
+
+参考实现：`apps/mofa-hello-world-rust/`。
 
 ### 4. 接入壳层（mofa-studio-shell）
 
@@ -151,6 +160,9 @@ if __name__ == "__main__":
 - 无法启动：确认 `python_entry` 路径存在。
 - 前端无数据：检查 API 路径与返回格式。
 
+### 7. 说明（Rust 后端）
+外挂 WebView 插件目前仅支持 `python_entry`。如需 Rust 后端，请用内建 Rust App 方案（见上节 3.1）。
+
 ## 选型建议
 - 需要深度壳层整合或原生 UI：选内建 Rust App。
-- 需要快速交付与前后端分离：选外挂 WebView 插件。
+- 需要快速交付与前后端分离：选外挂 WebView 插件（Python 后端）。

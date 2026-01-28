@@ -290,6 +290,13 @@ live_design! {
                 }
             }
 
+            hello_world_rust_tab = <SidebarMenuButton> {
+                text: "Hello World (Rust)"
+                draw_icon: {
+                    svg_file: dep("crate://self/resources/icons/start.svg")
+                }
+            }
+
             // Apps container - height Fit so it adapts to content
             apps_wrapper = <View> {
                 width: Fill, height: Fit
@@ -383,6 +390,7 @@ pub enum SidebarSelection {
     PodcastFactory,
     NoteTaker,
     HelloWorld,
+    HelloWorldRust,
     App(usize),     // 1-20
     Plugin(String), // Plugin ID
     Settings,
@@ -624,6 +632,15 @@ impl Widget for Sidebar {
             self.handle_selection(cx, SidebarSelection::HelloWorld);
         }
 
+        // Handle Hello World (Rust) tab click
+        if self
+            .view
+            .button(ids!(main_content.hello_world_rust_tab))
+            .clicked(actions)
+        {
+            self.handle_selection(cx, SidebarSelection::HelloWorldRust);
+        }
+
         // Handle Settings tab click
         if self.view.button(ids!(settings_tab)).clicked(actions) {
             self.handle_selection(cx, SidebarSelection::Settings);
@@ -810,6 +827,15 @@ impl Sidebar {
                     .button(ids!(main_content.apps_wrapper.apps_scroll.pinned_app_btn))
                     .set_visible(cx, false);
             }
+            SidebarSelection::HelloWorldRust => {
+                self.view
+                    .button(ids!(main_content.hello_world_rust_tab))
+                    .apply_over(cx, live! { draw_bg: { selected: 1.0 } });
+                self.pinned_app_name = None;
+                self.view
+                    .button(ids!(main_content.apps_wrapper.apps_scroll.pinned_app_btn))
+                    .set_visible(cx, false);
+            }
             SidebarSelection::App(app_idx) => {
                 self.set_app_button_selected(cx, *app_idx, true);
 
@@ -894,6 +920,7 @@ impl Sidebar {
             ids!(main_content.podcast_factory_tab),
             ids!(main_content.note_taker_tab),
             ids!(main_content.hello_world_tab),
+            ids!(main_content.hello_world_rust_tab),
             ids!(settings_tab),
             ids!(main_content.apps_wrapper.apps_scroll.pinned_app_btn)
         );
@@ -1358,6 +1385,12 @@ impl SidebarRef {
                         inner
                             .view
                             .button(ids!(main_content.hello_world_tab))
+                            .apply_over(cx, live! { draw_bg: { selected: 1.0 } });
+                    }
+                    SidebarSelection::HelloWorldRust => {
+                        inner
+                            .view
+                            .button(ids!(main_content.hello_world_rust_tab))
                             .apply_over(cx, live! { draw_bg: { selected: 1.0 } });
                     }
                     SidebarSelection::App(app_idx) => {

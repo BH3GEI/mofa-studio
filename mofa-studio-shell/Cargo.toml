@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [features]
-default = ["mofa-fm", "mofa-fm-web", "mofa-settings", "mofa-debate", "mofa-webview-demo", "mofa-personal-news", "mofa-transcriber", "mofa-podcast", "mofa-podcast-factory", "mofa-note-taker", "mofa-hello-world"]
+default = ["mofa-fm", "mofa-fm-web", "mofa-settings", "mofa-debate", "mofa-webview-demo", "mofa-personal-news", "mofa-transcriber", "mofa-podcast", "mofa-podcast-factory", "mofa-note-taker", "mofa-hello-world", "mofa-hello-world-rust"]
 mofa-fm = ["dep:mofa-fm"]
 mofa-fm-web = ["dep:mofa-fm-web"]
 mofa-settings = ["dep:mofa-settings"]
@@ -16,6 +16,7 @@ mofa-podcast = ["dep:mofa-podcast"]
 mofa-podcast-factory = ["dep:mofa-podcast-factory"]
 mofa-note-taker = ["dep:mofa-note-taker"]
 mofa-hello-world = ["dep:mofa-hello-world"]
+mofa-hello-world-rust = ["dep:mofa-hello-world-rust"]
 
 [dependencies]
 makepad-widgets.workspace = true
@@ -33,6 +34,7 @@ mofa-podcast = { path = "../apps/mofa-podcast", optional = true }
 mofa-podcast-factory = { path = "../apps/mofa-podcast-factory", optional = true }
 mofa-note-taker = { path = "../apps/mofa-note-taker", optional = true }
 mofa-hello-world = { path = "../apps/mofa-hello-world", optional = true }
+mofa-hello-world-rust = { path = "../apps/mofa-hello-world-rust", optional = true }
 
 # Audio
 cpal.workspace = true

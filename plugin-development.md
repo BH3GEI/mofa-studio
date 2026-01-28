@@ -1,14 +1,14 @@
 # MoFA Studio Plugin Development Guide
 
 > Note: Plugins are loaded from `~/.mofa-studio/plugins/` directory.
-> Each plugin needs a `manifest.json` file and either Python backend or native Rust code.
+> WebView plugins use a Python HTTP backend. If you want a Rust HTTP server, build a native app (compiled into the shell).
 
-This guide explains how to create plugins for MoFA Studio. The plugin system supports two types of plugins:
+This guide explains how to create plugins for MoFA Studio. The system supports two types of plugins:
 
-1. **Native plugins**: Written in Rust + Makepad, compiled into the application
+1. **Native plugins (apps)**: Written in Rust + Makepad, compiled into the application
 2. **WebView plugins**: Written in Python + HTML, dynamically loaded at runtime
 
-This guide focuses on WebView plugins, which are easier to develop and don't require recompiling the main application.
+This guide focuses on WebView plugins, which are easier to develop and don't require recompiling the main application. If you need the same WebView pattern but with a Rust backend, see "Rust Backend (Embedded App)" below.
 
 ## Table of Contents
 
@@ -16,6 +16,7 @@ This guide focuses on WebView plugins, which are easier to develop and don't req
 - [Plugin Structure](#plugin-structure)
 - [Manifest File](#manifest-file)
 - [Python Backend](#python-backend)
+- [Rust Backend (Embedded App)](#rust-backend-embedded-app)
 - [Frontend HTML](#frontend-html)
 - [Theme Support](#theme-support)
 - [API Design](#api-design)
@@ -51,6 +52,8 @@ mkdir -p ~/.mofa-studio/plugins/my-plugin/{python,static}
 4. Create `static/index.html` (Web UI)
 
 5. Restart MoFA Studio - your plugin will appear in the sidebar
+
+If you want a Rust backend instead of Python, build a native app and embed the server (see "Rust Backend (Embedded App)").
 
 ## Plugin Structure
 
@@ -156,6 +159,29 @@ if __name__ == "__main__":
 - Set `Access-Control-Allow-Origin: *` for API responses
 - Inherit from `SimpleHTTPRequestHandler` to serve static files
 - Override `do_GET`, `do_POST`, etc. for API endpoints
+
+## Rust Backend (Embedded App)
+
+If you want the same WebView + HTTP pattern but without Python, build a native app and run an in-process Rust HTTP server. This is compiled into the shell (not a dynamic plugin). The app then loads `http://127.0.0.1:{port}/` into a `WebViewContainer`.
+
+Reference implementation:
+- `apps/mofa-hello-world-rust/` (WebView UI + Rust HTTP server, no Python)
+
+Typical structure:
+- `static/index.html` for the UI
+- Rust server thread that serves `/api/*` and static files
+- Start/stop the server from the screen widget
+
+Minimal sketch:
+
+```rust
+// In your screen module
+let listener = TcpListener::bind("127.0.0.1:0")?;
+let port = listener.local_addr()?.port();
+// spawn thread to accept requests and serve /api + static
+let url = format!("http://127.0.0.1:{}", port);
+webview.load_url(&url)?;
+```
 
 ### Using Flask (Alternative)
 
@@ -337,6 +363,10 @@ def _send_json(self, data, status=200):
 
 See `~/.mofa-studio/plugins/hello-world/` for the simplest possible plugin.
 
+### Hello World (Rust) App
+
+See `apps/mofa-hello-world-rust/` for a Rust-powered WebView app that mirrors the Python plugin pattern.
+
 ### Note Taker Plugin
 
 See `~/.mofa-studio/plugins/note-taker/` for a full-featured example with:
@@ -372,6 +402,11 @@ See `~/.mofa-studio/plugins/note-taker/` for a full-featured example with:
    curl http://127.0.0.1:8080/api/info
    ```
 
+### Debug Rust Backend (Embedded App)
+
+- Run the shell and open your app page.
+- Check console logs for server start/stop and request errors.
+
 ### Debug Frontend
 
 1. Open browser developer tools (F12)
@@ -389,6 +424,8 @@ See `~/.mofa-studio/plugins/note-taker/` for a full-featured example with:
 | CORS errors | Add proper CORS headers to all API responses |
 
 ## Plugin Lifecycle
+
+This section describes dynamic WebView plugins (Python backend). Native apps follow the standard app lifecycle.
 
 1. **Discovery**: MoFA Studio scans `~/.mofa-studio/plugins/` at startup
 2. **Loading**: Parses `manifest.json` for each plugin directory

@@ -118,6 +118,8 @@ pub enum PageId {
     NoteTaker,
     /// Hello World page
     HelloWorld,
+    /// Hello World (Rust) page
+    HelloWorldRust,
     /// Dynamic plugin page (for WebView plugins)
     Plugin,
 }
@@ -138,6 +140,7 @@ impl PageId {
             PageId::PodcastFactory => live_id!(podcast_factory_tab),
             PageId::NoteTaker => live_id!(note_taker_tab),
             PageId::HelloWorld => live_id!(hello_world_tab),
+            PageId::HelloWorldRust => live_id!(hello_world_rust_tab),
             PageId::Plugin => live_id!(plugin_tab),
         }
     }
@@ -157,6 +160,7 @@ impl PageId {
             PageId::PodcastFactory => live_id!(podcast_factory_page),
             PageId::NoteTaker => live_id!(note_taker_page),
             PageId::HelloWorld => live_id!(hello_world_page),
+            PageId::HelloWorldRust => live_id!(hello_world_rust_page),
             PageId::Plugin => live_id!(plugin_page),
         }
     }
@@ -190,6 +194,7 @@ impl PageRouter {
                 PageId::PodcastFactory,
                 PageId::NoteTaker,
                 PageId::HelloWorld,
+                PageId::HelloWorldRust,
                 PageId::Plugin,
             ],
         }

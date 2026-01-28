@@ -54,6 +54,8 @@ use mofa_note_taker::MoFaNoteTakerApp;
 use mofa_note_taker::screen::NoteTakerScreenWidgetRefExt;
 use mofa_hello_world::MoFaHelloWorldApp;
 use mofa_hello_world::screen::HelloWorldScreenWidgetRefExt;
+use mofa_hello_world_rust::MoFaHelloWorldRustApp;
+use mofa_hello_world_rust::screen::HelloWorldRustScreenWidgetRefExt;
 use mofa_settings::data::Preferences;
 use mofa_settings::screen::SettingsScreenWidgetRefExt;
 
@@ -422,6 +424,7 @@ impl LiveHook for App {
         self.app_registry.register(MoFaPodcastFactoryApp::info());
         self.app_registry.register(MoFaNoteTakerApp::info());
         self.app_registry.register(MoFaHelloWorldApp::info());
+        self.app_registry.register(MoFaHelloWorldRustApp::info());
 
         // Initialize page router (defaults to MoFA FM)
         self.page_router = PageRouter::new();
@@ -510,6 +513,7 @@ impl LiveRegister for App {
         <MoFaPodcastFactoryApp as MofaApp>::live_design(cx);
         <MoFaNoteTakerApp as MofaApp>::live_design(cx);
         <MoFaHelloWorldApp as MofaApp>::live_design(cx);
+        <MoFaHelloWorldRustApp as MofaApp>::live_design(cx);
 
         // Shell widgets (order matters - tabs before dashboard, apps before dashboard)
         mofa_studio_shell::widgets::sidebar::live_design(cx);
@@ -888,6 +892,12 @@ impl App {
                 .set_active(cx, false);
         }
 
+        // Deactivate WebView when leaving Hello World (Rust) page
+        if old_page == Some(PageId::HelloWorldRust) {
+            self.ui.web_view_container(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.hello_world_rust_page.content.webview_area.webview_wrapper.webview))
+                .set_active(cx, false);
+        }
+
         // Deactivate Plugin WebView when leaving Plugin page
         if old_page == Some(PageId::Plugin) {
             self.ui.plugin_screen(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.plugin_page))
@@ -959,6 +969,14 @@ impl App {
                 .start_server(cx);
         }
 
+        // Activate WebView when entering Hello World (Rust) page
+        if page == PageId::HelloWorldRust {
+            self.ui.web_view_container(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.hello_world_rust_page.content.webview_area.webview_wrapper.webview))
+                .set_active(cx, true);
+            self.ui.hello_world_rust_screen(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.hello_world_rust_page))
+                .start_server(cx);
+        }
+
         // Activate PluginScreen WebView when entering Plugin page
         if page == PageId::Plugin {
             self.ui.plugin_screen(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.plugin_page))
@@ -997,6 +1015,8 @@ impl App {
             .apply_over(cx, live!{ visible: (current == Some(PageId::NoteTaker)) });
         self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.hello_world_page))
             .apply_over(cx, live!{ visible: (current == Some(PageId::HelloWorld)) });
+        self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.hello_world_rust_page))
+            .apply_over(cx, live!{ visible: (current == Some(PageId::HelloWorldRust)) });
         self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.plugin_page))
             .apply_over(cx, live!{ visible: (current == Some(PageId::Plugin)) });
     }
@@ -1071,6 +1091,7 @@ impl App {
             PageId::PodcastFactory => ("Book Cast", "Transform books into podcast series"),
             PageId::NoteTaker => ("Note Taker", "Web-based note taking workspace"),
             PageId::HelloWorld => ("Hello World", "WebView demo starter app"),
+            PageId::HelloWorldRust => ("Hello World (Rust)", "Rust-powered WebView demo app"),
             PageId::Plugin => ("Plugin", "Dynamic plugin"),
         };
 
