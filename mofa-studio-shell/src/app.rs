@@ -991,7 +991,7 @@ impl App {
         if page == PageId::WebViewPlaceholder {
             self.ui.web_view_container(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.webview_placeholder_page.content.webview_area.webview_wrapper.webview))
                 .set_active(cx, true);
-            self.ui.webview_placeholder_screen(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.webview_placeholder_page))
+            self.ui.web_view_placeholder_screen(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.webview_placeholder_page))
                 .start_server(cx);
         }
 
