@@ -10,9 +10,21 @@ This guide explains how to create plugins for MoFA Studio. The system supports t
 
 This guide focuses on WebView plugins, which are easier to develop and don't require recompiling the main application. If you need the same WebView pattern but with a Rust backend, see "Rust Backend (Embedded App)" below.
 
+## Integration Modes (Summary)
+
+**App vs Plugin**
+- **Native app (compiled)**: Rust + Makepad UI (requires rebuild).
+- **Embedded WebView app (compiled)**: Rust HTTP server + WebView UI (requires rebuild).
+- **WebView plugin (dynamic)**: Python HTTP server + WebView UI (no rebuild).
+
+**Frontend choices (not separate modes)**
+- React/Vue/other frameworks are just ways to build the HTML/JS UI that runs inside WebView.
+- You can use them in either a WebView plugin (Python backend) or an embedded app (Rust backend).
+
 ## Table of Contents
 
 - [Quick Start](#quick-start)
+- [Integration Modes (Summary)](#integration-modes-summary)
 - [Plugin Structure](#plugin-structure)
 - [Manifest File](#manifest-file)
 - [Python Backend](#python-backend)
@@ -71,6 +83,8 @@ A WebView plugin follows this directory structure:
       style.css        # Additional styles (optional)
       app.js           # Additional scripts (optional)
 ```
+
+If you use React/Vue/Vite, build the app and copy the output (e.g., `dist/*`) into `static/`. Make sure asset paths are relative (e.g., set `base: './'` in Vite) so the WebView can load them.
 
 ## Manifest File
 
@@ -171,6 +185,8 @@ Typical structure:
 - `static/index.html` for the UI
 - Rust server thread that serves `/api/*` and static files
 - Start/stop the server from the screen widget
+
+You can serve a built SPA (React/Vue) from `static/` or another build output folder and add a fallback to `index.html` for client-side routes.
 
 Minimal sketch:
 

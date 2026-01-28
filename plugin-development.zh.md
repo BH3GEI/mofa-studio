@@ -1,8 +1,18 @@
 # MoFA Studio 插件接入指南（中文）
 
-本指南说明两种接入方式：
-- 内建 Rust App：需重编译，适合深度整合壳层与原生 UI。
-- 外挂 WebView：无需重编译，适合快速迭代与前后端分离（当前后端为 Python HTTP）。
+本指南说明两类接入方式：
+- 内建 Rust App（需重编译）：可做原生 Makepad UI，亦可走 WebView + Rust HTTP。
+- 外挂 WebView（无需重编译）：后端为 Python HTTP，前端为 HTML/JS（可由 React/Vue 构建后落地）。
+
+## 模式总览
+
+**App 与插件**
+- 原生 App（编译内建）：Rust + Makepad UI
+- WebView App（编译内建）：Rust HTTP + WebView UI
+- WebView 插件（动态加载）：Python HTTP + WebView UI
+
+**前端框架（非独立模式）**
+- React/Vue 等仅是 WebView 内部的前端实现方式，可用于插件或内建 App。
 
 ## 一、内建 Rust App（需重编译）
 
@@ -54,6 +64,8 @@ impl MofaApp for MoFaMyApp {
 
 参考实现：`apps/mofa-hello-world-rust/`。
 
+若用 React/Vue/Vite 等，先构建产物，再由 Rust 服务静态目录，并为前端路由加 `index.html` 回落。
+
 ### 4. 接入壳层（mofa-studio-shell）
 
 1) 添加依赖与 feature：
@@ -88,6 +100,8 @@ impl MofaApp for MoFaMyApp {
     static/
       index.html
 ```
+
+若前端用 React/Vue/Vite，请将构建产物拷入 `static/`，并确保资源路径为相对路径（如 Vite 设 `base: './'`）。
 
 ### 2. manifest.json
 字段定义见 `/Users/yao/Desktop/code/work/mofa-org/mofalaya/mofa-studio/mofa-widgets/src/plugins/manifest.rs:22`。
