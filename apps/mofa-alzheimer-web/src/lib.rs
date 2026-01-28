@@ -12,9 +12,9 @@ pub struct MoFaAlzheimerWebApp;
 impl MofaApp for MoFaAlzheimerWebApp {
     fn info() -> AppInfo {
         AppInfo {
-            name: "Alzheimer",
+            name: "WebView Placeholder",
             id: "mofa-alzheimer-web",
-            description: "Alzheimer prevention frontend",
+            description: "Placeholder WebView app (replace with real frontend)",
             tab_id: Some(live_id!(alzheimer_web_tab)),
             page_id: Some(live_id!(alzheimer_web_page)),
             show_in_sidebar: true,

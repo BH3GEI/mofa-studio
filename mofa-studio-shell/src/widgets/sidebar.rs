@@ -298,7 +298,7 @@ live_design! {
             }
 
             alzheimer_web_tab = <SidebarMenuButton> {
-                text: "Alzheimer"
+                text: "WebView Placeholder"
                 draw_icon: {
                     svg_file: dep("crate://self/resources/icons/webview.svg")
                 }

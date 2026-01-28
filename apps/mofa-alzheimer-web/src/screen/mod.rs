@@ -1,4 +1,4 @@
-//! Alzheimer Web Screen
+//! WebView Placeholder Screen
 //!
 //! WebView-based app with an embedded Rust HTTP server
 
@@ -18,7 +18,7 @@ const FALLBACK_HTML: &str = r#"<!doctype html>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Alzheimer Frontend</title>
+  <title>WebView Placeholder</title>
   <style>
     body { font-family: system-ui, sans-serif; padding: 32px; background: #0f1115; color: #e0e0e5; }
     code { background: #1a1d24; padding: 2px 6px; border-radius: 4px; }
@@ -26,9 +26,9 @@ const FALLBACK_HTML: &str = r#"<!doctype html>
   </style>
 </head>
 <body>
-  <h1>Alzheimer Frontend</h1>
-  <p>Static build not found.</p>
-  <p>Build the frontend first:</p>
+  <h1>WebView Placeholder</h1>
+  <p>This page is a placeholder. Replace it with your real frontend build.</p>
+  <p>Suggested flow:</p>
   <pre><code>cd external/alzheimer-frontend
 npm install
 npm run build</code></pre>
@@ -255,7 +255,7 @@ live_design! {
             <View> { width: Fill, height: 1 }
 
             version_label = <Label> {
-                text: "Alzheimer Web v1.0"
+                text: "WebView Placeholder v1.0"
                 draw_text: {
                     instance dark_mode: 0.0
                     text_style: { font_size: 10.0 }
@@ -602,7 +602,7 @@ impl Widget for AlzheimerWebScreen {
                 if wa.widget_uid == our_uid {
                     match wa.cast() {
                         WebViewAction::Initialized => {
-                            ::log::info!("Alzheimer WebView initialized");
+                            ::log::info!("WebView placeholder initialized");
                             let server = self.server.lock().unwrap();
                             if server.is_running() {
                                 drop(server);
@@ -652,7 +652,7 @@ impl AlzheimerWebScreen {
 
             match result {
                 Ok(port) => {
-                    ::log::info!("Alzheimer server started on port {}", port);
+                    ::log::info!("WebView placeholder server started on port {}", port);
                     self.set_status(cx, &format!("Server running on port {}", port), 2.0);
                     self.view.button(ids!(status_bar.start_btn)).set_text(cx, "Stop Server");
                     self.load_url(cx);

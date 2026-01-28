@@ -1112,7 +1112,7 @@ impl App {
             PageId::NoteTaker => ("Note Taker", "Web-based note taking workspace"),
             PageId::HelloWorld => ("Hello World", "WebView demo starter app"),
             PageId::HelloWorldRust => ("Hello World (Rust)", "Rust-powered WebView demo app"),
-            PageId::AlzheimerWeb => ("Alzheimer", "Alzheimer prevention frontend"),
+            PageId::AlzheimerWeb => ("WebView Placeholder", "Placeholder WebView app"),
             PageId::Plugin => ("Plugin", "Dynamic plugin"),
         };
 
