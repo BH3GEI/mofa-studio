@@ -4,8 +4,9 @@ version.workspace = true
 edition.workspace = true
 
 [features]
-default = ["mofa-fm", "mofa-settings", "mofa-debate", "mofa-webview-demo", "mofa-personal-news", "mofa-transcriber", "mofa-podcast", "mofa-podcast-factory", "mofa-note-taker", "mofa-hello-world"]
+default = ["mofa-fm", "mofa-fm-web", "mofa-settings", "mofa-debate", "mofa-webview-demo", "mofa-personal-news", "mofa-transcriber", "mofa-podcast", "mofa-podcast-factory", "mofa-note-taker", "mofa-hello-world"]
 mofa-fm = ["dep:mofa-fm"]
+mofa-fm-web = ["dep:mofa-fm-web"]
 mofa-settings = ["dep:mofa-settings"]
 mofa-debate = ["dep:mofa-debate"]
 mofa-webview-demo = ["dep:mofa-webview-demo"]
@@ -22,6 +23,7 @@ mofa-widgets = { path = "../mofa-widgets" }
 mofa-ui = { path = "../mofa-ui" }
 mofa-dora-bridge = { path = "../mofa-dora-bridge" }
 mofa-fm = { path = "../apps/mofa-fm", optional = true }
+mofa-fm-web = { path = "../apps/mofa-fm-web", optional = true }
 mofa-settings = { path = "../apps/mofa-settings", optional = true }
 mofa-debate = { path = "../apps/mofa-debate", optional = true }
 mofa-webview-demo = { path = "../apps/mofa-webview-demo", optional = true }

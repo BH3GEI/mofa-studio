@@ -39,6 +39,7 @@ live_design! {
     use mofa_widgets::theme::TEXT_SECONDARY_DARK;
 
     use mofa_fm::screen::design::MoFaFMScreen;
+    use mofa_fm_web::screen::MofaFmWebScreen;
     use mofa_settings::screen::SettingsScreen;
     use mofa_debate::screen::design::MoFaDebateScreen;
     use mofa_webview_demo::screen::WebViewDemoScreen;
@@ -336,6 +337,11 @@ live_design! {
                         fm_page = <MoFaFMScreen> {
                             width: Fill, height: Fill
                             visible: true
+                        }
+
+                        mofa_fm_web_page = <MofaFmWebScreen> {
+                            width: Fill, height: Fill
+                            visible: false
                         }
 
                         debate_page = <MoFaDebateScreen> {

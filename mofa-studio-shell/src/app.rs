@@ -38,6 +38,8 @@ use mofa_widgets::webview::WebViewContainerWidgetRefExt;
 use mofa_widgets::plugins::{PluginLoader, PluginScreenWidgetRefExt};
 use std::sync::{Arc, Mutex};
 use mofa_fm::{MoFaFMApp, MoFaFMScreenWidgetRefExt};
+use mofa_fm_web::MoFaFmWebApp;
+use mofa_fm_web::screen::MofaFmWebScreenWidgetRefExt;
 use mofa_debate::MoFaDebateApp;
 use mofa_settings::MoFaSettingsApp;
 use mofa_webview_demo::MoFaWebViewDemoApp;
@@ -410,6 +412,7 @@ impl LiveHook for App {
     fn after_new_from_doc(&mut self, _cx: &mut Cx) {
         // Initialize the app registry with all installed apps
         self.app_registry.register(MoFaFMApp::info());
+        self.app_registry.register(MoFaFmWebApp::info());
         self.app_registry.register(MoFaDebateApp::info());
         self.app_registry.register(MoFaSettingsApp::info());
         self.app_registry.register(MoFaWebViewDemoApp::info());
@@ -497,6 +500,7 @@ impl LiveRegister for App {
         // Note: Widget types in live_design! macro still require compile-time imports
         // (Makepad constraint), but registration uses the standardized trait interface
         <MoFaFMApp as MofaApp>::live_design(cx);
+        <MoFaFmWebApp as MofaApp>::live_design(cx);
         <MoFaDebateApp as MofaApp>::live_design(cx);
         <MoFaSettingsApp as MofaApp>::live_design(cx);
         <MoFaWebViewDemoApp as MofaApp>::live_design(cx);
@@ -848,6 +852,12 @@ impl App {
                 .set_active(cx, false);
         }
 
+        // Deactivate WebView when leaving MoFA.fm page
+        if old_page == Some(PageId::MofaFMWeb) {
+            self.ui.web_view_container(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.mofa_fm_web_page.content.webview_area.webview_wrapper.webview))
+                .set_active(cx, false);
+        }
+
         // Deactivate WebView when leaving Personal News page
         if old_page == Some(PageId::PersonalNews) {
             self.ui.web_view_container(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.personal_news_page.content.webview_area.webview_wrapper.webview))
@@ -899,6 +909,14 @@ impl App {
         if page == PageId::WebViewDemo {
             self.ui.web_view_container(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.webview_demo_page.content.webview_area.webview_wrapper.webview))
                 .set_active(cx, true);
+        }
+
+        // Activate WebView when entering MoFA.fm page
+        if page == PageId::MofaFMWeb {
+            self.ui.web_view_container(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.mofa_fm_web_page.content.webview_area.webview_wrapper.webview))
+                .set_active(cx, true);
+            self.ui.mofa_fm_web_screen(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.mofa_fm_web_page))
+                .start_server(cx);
         }
 
         // Activate WebView when entering Personal News page
@@ -957,6 +975,8 @@ impl App {
         // Set visibility for each page
         self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.fm_page))
             .apply_over(cx, live!{ visible: (current == Some(PageId::MofaFM)) });
+        self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.mofa_fm_web_page))
+            .apply_over(cx, live!{ visible: (current == Some(PageId::MofaFMWeb)) });
         self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.debate_page))
             .apply_over(cx, live!{ visible: (current == Some(PageId::Debate)) });
         self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.app_page))
@@ -1042,6 +1062,7 @@ impl App {
     fn update_hero_title(&mut self, cx: &mut Cx, page: PageId) {
         let (title, description) = match page {
             PageId::MofaFM => ("MoFA FM", "AI-powered audio streaming and voice interface"),
+            PageId::MofaFMWeb => ("MoFA.fm", "Embedded MoFA.fm website"),
             PageId::Debate => ("MoFA Debate", "Multi-agent debate and discussion platform"),
             PageId::Settings => ("Settings", "Configure providers and preferences"),
             PageId::App => ("Demo App", "Select an app from the sidebar"),

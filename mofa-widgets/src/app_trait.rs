@@ -96,6 +96,8 @@ impl Default for AppInfo {
 pub enum PageId {
     /// MoFA FM main app
     MofaFM,
+    /// MoFA.fm embedded web page
+    MofaFMWeb,
     /// Debate app
     Debate,
     /// Settings page
@@ -125,6 +127,7 @@ impl PageId {
     pub fn tab_live_id(&self) -> LiveId {
         match self {
             PageId::MofaFM => live_id!(mofa_fm_tab),
+            PageId::MofaFMWeb => live_id!(mofa_fm_web_tab),
             PageId::Debate => live_id!(debate_tab),
             PageId::Settings => live_id!(settings_tab),
             PageId::App => live_id!(app_tab),
@@ -143,6 +146,7 @@ impl PageId {
     pub fn page_live_id(&self) -> LiveId {
         match self {
             PageId::MofaFM => live_id!(fm_page),
+            PageId::MofaFMWeb => live_id!(mofa_fm_web_page),
             PageId::Debate => live_id!(debate_page),
             PageId::Settings => live_id!(settings_page),
             PageId::App => live_id!(app_page),
@@ -175,6 +179,7 @@ impl PageRouter {
             current_page: Some(PageId::MofaFM), // Default to FM
             pages: vec![
                 PageId::MofaFM,
+                PageId::MofaFMWeb,
                 PageId::Debate,
                 PageId::Settings,
                 PageId::App,

@@ -227,6 +227,13 @@ live_design! {
                 }
             }
 
+            mofa_fm_web_tab = <SidebarMenuButton> {
+                text: "MoFA.fm"
+                draw_icon: {
+                    svg_file: dep("crate://self/resources/icons/webview.svg")
+                }
+            }
+
             debate_tab = <SidebarMenuButton> {
                 text: "Debate"
                 draw_icon: {
@@ -367,6 +374,7 @@ live_design! {
 #[derive(Clone, PartialEq)]
 pub enum SidebarSelection {
     MofaFM,
+    MofaFMWeb,
     Debate,
     WebViewDemo,
     PersonalNews,
@@ -473,9 +481,10 @@ impl Widget for Sidebar {
                     self.max_scroll_height
                 } else if self.expand_to_fill && self.cached_sidebar_height > 0.0 {
                     // Pinned sidebar: calculate available height dynamically
-                    // Reserved space: logo_area (5) + mofa_fm_tab (~48) + settings_divider (1+16 margin)
-                    //                 + settings_tab (~48) + padding (top:15 + bottom:15) + spacing
-                    let reserved_height = 5.0 + 48.0 + 17.0 + 48.0 + 30.0 + 20.0; // ~168px total
+                    // Reserved space: logo_area (5) + mofa_fm_tab (~48) + mofa_fm_web_tab (~48)
+                    //                 + settings_divider (1+16 margin) + settings_tab (~48)
+                    //                 + padding (top:15 + bottom:15) + spacing
+                    let reserved_height = 5.0 + 48.0 + 48.0 + 17.0 + 48.0 + 30.0 + 20.0; // ~216px total
                     (self.cached_sidebar_height - reserved_height).max(200.0)
                 } else if self.expand_to_fill {
                     // Fallback for pinned sidebar if no cached height yet
@@ -532,6 +541,15 @@ impl Widget for Sidebar {
             .clicked(actions)
         {
             self.handle_selection(cx, SidebarSelection::MofaFM);
+        }
+
+        // Handle MoFA.fm tab click
+        if self
+            .view
+            .button(ids!(main_content.mofa_fm_web_tab))
+            .clicked(actions)
+        {
+            self.handle_selection(cx, SidebarSelection::MofaFMWeb);
         }
 
         // Handle Debate tab click
@@ -709,6 +727,15 @@ impl Sidebar {
                     .button(ids!(main_content.apps_wrapper.apps_scroll.pinned_app_btn))
                     .set_visible(cx, false);
             }
+            SidebarSelection::MofaFMWeb => {
+                self.view
+                    .button(ids!(main_content.mofa_fm_web_tab))
+                    .apply_over(cx, live! { draw_bg: { selected: 1.0 } });
+                self.pinned_app_name = None;
+                self.view
+                    .button(ids!(main_content.apps_wrapper.apps_scroll.pinned_app_btn))
+                    .set_visible(cx, false);
+            }
             SidebarSelection::Debate => {
                 self.view
                     .button(ids!(main_content.debate_tab))
@@ -858,6 +885,7 @@ impl Sidebar {
             self,
             cx,
             ids!(main_content.mofa_fm_tab),
+            ids!(main_content.mofa_fm_web_tab),
             ids!(main_content.debate_tab),
             ids!(main_content.webview_demo_tab),
             ids!(main_content.personal_news_tab),
@@ -1258,6 +1286,12 @@ impl SidebarRef {
                             .button(ids!(main_content.mofa_fm_tab))
                             .apply_over(cx, live! { draw_bg: { selected: 1.0 } });
                     }
+                    SidebarSelection::MofaFMWeb => {
+                        inner
+                            .view
+                            .button(ids!(main_content.mofa_fm_web_tab))
+                            .apply_over(cx, live! { draw_bg: { selected: 1.0 } });
+                    }
                     SidebarSelection::Debate => {
                         inner
                             .view
@@ -1364,6 +1398,18 @@ impl SidebarRef {
             inner
                 .view
                 .button(ids!(main_content.mofa_fm_tab))
+                .apply_over(
+                    cx,
+                    live! {
+                        draw_bg: { dark_mode: (dark_mode) }
+                        draw_text: { dark_mode: (dark_mode) }
+                    },
+                );
+
+            // MoFA.fm tab
+            inner
+                .view
+                .button(ids!(main_content.mofa_fm_web_tab))
                 .apply_over(
                     cx,
                     live! {
