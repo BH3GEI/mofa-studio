@@ -47,13 +47,32 @@ def extract_audio_from_video(video_path: str, output_path: str) -> bool:
         return False
 
 
-def transcribe_audio(audio_path: str, model_size: str = "base") -> Optional[Dict]:
+def get_whisper_model_dir() -> Optional[str]:
+    """Resolve Whisper model directory from env or bundled resources."""
+    env_dir = os.environ.get("WHISPER_MODEL_DIR")
+    if env_dir:
+        return env_dir
+    try:
+        resources_dir = Path(__file__).resolve().parents[3]
+        candidate = resources_dir / "models" / "whisper"
+        if candidate.exists():
+            return str(candidate)
+    except Exception:
+        return None
+    return None
+
+
+def transcribe_audio(audio_path: str, model_size: str = "tiny") -> Optional[Dict]:
     """Transcribe audio using faster-whisper."""
     try:
         from faster_whisper import WhisperModel
 
         # Use CPU by default, GPU if available
-        model = WhisperModel(model_size, device="cpu", compute_type="int8")
+        model_dir = get_whisper_model_dir()
+        if model_dir:
+            model = WhisperModel(model_size, device="cpu", compute_type="int8", download_root=model_dir)
+        else:
+            model = WhisperModel(model_size, device="cpu", compute_type="int8")
 
         segments, info = model.transcribe(audio_path, beam_size=5)
 
@@ -449,7 +468,7 @@ class TranscriberHandler(SimpleHTTPRequestHandler):
 
             file_data = None
             filename = "upload"
-            model_size = "base"
+            model_size = "tiny"
             api_key = None
 
             for part in parts:

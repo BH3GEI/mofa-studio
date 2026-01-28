@@ -254,8 +254,35 @@ fn find_available_port() -> Option<u16> {
         .map(|addr| addr.port())
 }
 
+fn find_embedded_python_cmd() -> Option<String> {
+    let exe_path = std::env::current_exe().ok()?;
+    let macos_dir = exe_path.parent()?;
+    let resources_dir = macos_dir.parent()?.join("Resources");
+    let wrapper = resources_dir.join("python/bin/python3");
+    if wrapper.exists() {
+        return Some(wrapper.to_string_lossy().to_string());
+    }
+    let framework_cmd = resources_dir.join("python/Python.framework/Versions/Current/bin/python3");
+    if framework_cmd.exists() {
+        return Some(framework_cmd.to_string_lossy().to_string());
+    }
+    let versions_dir = resources_dir.join("python/Python.framework/Versions");
+    if let Ok(entries) = std::fs::read_dir(&versions_dir) {
+        for entry in entries.flatten() {
+            let candidate = entry.path().join("bin/python3");
+            if candidate.exists() {
+                return Some(candidate.to_string_lossy().to_string());
+            }
+        }
+    }
+    None
+}
+
 /// Get the Python command to use
 fn get_python_cmd() -> String {
+    if let Some(cmd) = find_embedded_python_cmd() {
+        return cmd;
+    }
     // Check common locations
     let candidates = [
         "/opt/homebrew/bin/python3.11",
