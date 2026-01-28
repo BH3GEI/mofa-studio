@@ -297,7 +297,7 @@ live_design! {
                 }
             }
 
-            alzheimer_web_tab = <SidebarMenuButton> {
+            webview_placeholder_tab = <SidebarMenuButton> {
                 text: "WebView Placeholder"
                 draw_icon: {
                     svg_file: dep("crate://self/resources/icons/webview.svg")
@@ -398,7 +398,7 @@ pub enum SidebarSelection {
     NoteTaker,
     HelloWorld,
     HelloWorldRust,
-    AlzheimerWeb,
+    WebViewPlaceholder,
     App(usize),     // 1-20
     Plugin(String), // Plugin ID
     Settings,
@@ -649,13 +649,13 @@ impl Widget for Sidebar {
             self.handle_selection(cx, SidebarSelection::HelloWorldRust);
         }
 
-        // Handle Alzheimer Web tab click
+        // Handle WebView Placeholder tab click
         if self
             .view
-            .button(ids!(main_content.alzheimer_web_tab))
+            .button(ids!(main_content.webview_placeholder_tab))
             .clicked(actions)
         {
-            self.handle_selection(cx, SidebarSelection::AlzheimerWeb);
+            self.handle_selection(cx, SidebarSelection::WebViewPlaceholder);
         }
 
         // Handle Settings tab click
@@ -853,9 +853,9 @@ impl Sidebar {
                     .button(ids!(main_content.apps_wrapper.apps_scroll.pinned_app_btn))
                     .set_visible(cx, false);
             }
-            SidebarSelection::AlzheimerWeb => {
+            SidebarSelection::WebViewPlaceholder => {
                 self.view
-                    .button(ids!(main_content.alzheimer_web_tab))
+                    .button(ids!(main_content.webview_placeholder_tab))
                     .apply_over(cx, live! { draw_bg: { selected: 1.0 } });
                 self.pinned_app_name = None;
                 self.view
@@ -947,7 +947,7 @@ impl Sidebar {
             ids!(main_content.note_taker_tab),
             ids!(main_content.hello_world_tab),
             ids!(main_content.hello_world_rust_tab),
-            ids!(main_content.alzheimer_web_tab),
+            ids!(main_content.webview_placeholder_tab),
             ids!(settings_tab),
             ids!(main_content.apps_wrapper.apps_scroll.pinned_app_btn)
         );
@@ -1420,10 +1420,10 @@ impl SidebarRef {
                             .button(ids!(main_content.hello_world_rust_tab))
                             .apply_over(cx, live! { draw_bg: { selected: 1.0 } });
                     }
-                    SidebarSelection::AlzheimerWeb => {
+                    SidebarSelection::WebViewPlaceholder => {
                         inner
                             .view
-                            .button(ids!(main_content.alzheimer_web_tab))
+                            .button(ids!(main_content.webview_placeholder_tab))
                             .apply_over(cx, live! { draw_bg: { selected: 1.0 } });
                     }
                     SidebarSelection::App(app_idx) => {

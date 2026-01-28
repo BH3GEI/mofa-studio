@@ -52,5 +52,4 @@ setup.py
 .nix-mofa/
 
 # External frontend deps
-external/alzheimer-frontend/node_modules/
-external/alzheimer-frontend/node_modules/
+external/webview-placeholder/node_modules/

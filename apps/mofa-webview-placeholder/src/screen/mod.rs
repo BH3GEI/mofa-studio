@@ -29,7 +29,7 @@ const FALLBACK_HTML: &str = r#"<!doctype html>
   <h1>WebView Placeholder</h1>
   <p>This page is a placeholder. Replace it with your real frontend build.</p>
   <p>Suggested flow:</p>
-  <pre><code>cd external/alzheimer-frontend
+  <pre><code>cd external/webview-placeholder
 npm install
 npm run build</code></pre>
   <p>Then reopen this page.</p>
@@ -150,7 +150,7 @@ live_design! {
         }
     }
 
-    pub AlzheimerWebScreen = {{AlzheimerWebScreen}} {
+    pub WebViewPlaceholderScreen = {{WebViewPlaceholderScreen}} {
         width: Fill, height: Fill
         flow: Down
         show_bg: true
@@ -288,7 +288,7 @@ fn resolve_static_root() -> Option<PathBuf> {
         if let Some(macos_dir) = exe_path.parent() {
             let resources_path = macos_dir
                 .parent()
-                .map(|p| p.join("Resources/external/alzheimer-frontend/dist"));
+                .map(|p| p.join("Resources/external/webview-placeholder/dist"));
             if let Some(ref path) = resources_path {
                 if path.join("index.html").exists() {
                     return Some(path.clone());
@@ -298,7 +298,7 @@ fn resolve_static_root() -> Option<PathBuf> {
 
         if let Some(target_dir) = exe_path.parent() {
             if let Some(workspace) = target_dir.parent().and_then(|p| p.parent()) {
-                let dist_path = workspace.join("external/alzheimer-frontend/dist");
+                let dist_path = workspace.join("external/webview-placeholder/dist");
                 if dist_path.join("index.html").exists() {
                     return Some(dist_path);
                 }
@@ -307,8 +307,8 @@ fn resolve_static_root() -> Option<PathBuf> {
     }
 
     let candidates = [
-        "external/alzheimer-frontend/dist",
-        "../external/alzheimer-frontend/dist",
+        "external/webview-placeholder/dist",
+        "../external/webview-placeholder/dist",
     ];
 
     for candidate in candidates {
@@ -560,7 +560,7 @@ impl Drop for RustServer {
 }
 
 #[derive(Live, LiveHook, Widget)]
-pub struct AlzheimerWebScreen {
+pub struct WebViewPlaceholderScreen {
     #[deref]
     view: View,
 
@@ -568,7 +568,7 @@ pub struct AlzheimerWebScreen {
     server: Arc<Mutex<RustServer>>,
 }
 
-impl Widget for AlzheimerWebScreen {
+impl Widget for WebViewPlaceholderScreen {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         self.view.handle_event(cx, event, scope);
 
@@ -629,7 +629,7 @@ impl Widget for AlzheimerWebScreen {
     }
 }
 
-impl AlzheimerWebScreen {
+impl WebViewPlaceholderScreen {
     fn toggle_server(&mut self, cx: &mut Cx) {
         let is_running = {
             let server = self.server.lock().unwrap();
@@ -711,7 +711,7 @@ impl AlzheimerWebScreen {
     }
 }
 
-impl AlzheimerWebScreenRef {
+impl WebViewPlaceholderScreenRef {
     pub fn start_server(&self, cx: &mut Cx) {
         if let Some(mut inner) = self.borrow_mut() {
             let is_running = {

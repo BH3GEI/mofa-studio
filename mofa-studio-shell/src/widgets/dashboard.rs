@@ -50,7 +50,7 @@ live_design! {
     use mofa_note_taker::screen::NoteTakerScreen;
     use mofa_hello_world::screen::HelloWorldScreen;
     use mofa_hello_world_rust::screen::HelloWorldRustScreen;
-    use mofa_alzheimer_web::screen::AlzheimerWebScreen;
+    use mofa_webview_placeholder::screen::WebViewPlaceholderScreen;
     use mofa_widgets::plugins::screen::PluginScreen;
     use crate::widgets::tabs::TabWidget;
     use crate::widgets::tabs::TabBar;
@@ -421,7 +421,7 @@ live_design! {
                             visible: false
                         }
 
-                        alzheimer_web_page = <AlzheimerWebScreen> {
+                        webview_placeholder_page = <WebViewPlaceholderScreen> {
                             width: Fill, height: Fill
                             visible: false
                         }

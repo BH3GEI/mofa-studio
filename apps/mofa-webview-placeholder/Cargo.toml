@@ -1,8 +1,8 @@
 [package]
-name = "mofa-alzheimer-web"
+name = "mofa-webview-placeholder"
 version = "0.1.0"
 edition = "2021"
-description = "Alzheimer frontend embedded in a WebView"
+description = "Placeholder frontend embedded in a WebView"
 
 [dependencies]
 makepad-widgets = { workspace = true }

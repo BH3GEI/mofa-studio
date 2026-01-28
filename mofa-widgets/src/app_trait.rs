@@ -120,8 +120,8 @@ pub enum PageId {
     HelloWorld,
     /// Hello World (Rust) page
     HelloWorldRust,
-    /// Alzheimer Web page
-    AlzheimerWeb,
+    /// WebView Placeholder page
+    WebViewPlaceholder,
     /// Dynamic plugin page (for WebView plugins)
     Plugin,
 }
@@ -143,7 +143,7 @@ impl PageId {
             PageId::NoteTaker => live_id!(note_taker_tab),
             PageId::HelloWorld => live_id!(hello_world_tab),
             PageId::HelloWorldRust => live_id!(hello_world_rust_tab),
-            PageId::AlzheimerWeb => live_id!(alzheimer_web_tab),
+            PageId::WebViewPlaceholder => live_id!(webview_placeholder_tab),
             PageId::Plugin => live_id!(plugin_tab),
         }
     }
@@ -164,7 +164,7 @@ impl PageId {
             PageId::NoteTaker => live_id!(note_taker_page),
             PageId::HelloWorld => live_id!(hello_world_page),
             PageId::HelloWorldRust => live_id!(hello_world_rust_page),
-            PageId::AlzheimerWeb => live_id!(alzheimer_web_page),
+            PageId::WebViewPlaceholder => live_id!(webview_placeholder_page),
             PageId::Plugin => live_id!(plugin_page),
         }
     }
@@ -199,7 +199,7 @@ impl PageRouter {
                 PageId::NoteTaker,
                 PageId::HelloWorld,
                 PageId::HelloWorldRust,
-                PageId::AlzheimerWeb,
+                PageId::WebViewPlaceholder,
                 PageId::Plugin,
             ],
         }
