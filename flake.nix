@@ -61,15 +61,22 @@
 
             export CARGO_HOME="''${MOFA_CARGO_HOME:-$STATE_DIR/cargo}"
             export PATH="$BIN_DIR:$PATH"
-            TARGET_DORA_RS_VERSION="''${MOFA_DORA_RS_VERSION:-0.3.12}"
+            TARGET_DORA_RS_VERSION="''${MOFA_DORA_RS_VERSION:-0.4.1}"
+            TARGET_DORA_CLI_VERSION="''${MOFA_DORA_CLI_VERSION:-0.4.1}"
 
             if [ "''${MOFA_SKIP_BOOTSTRAP:-0}" != 1 ]; then
-              if [ ! -x "$BIN_DIR/dora" ]; then
+              get_installed_dora_cli_version() {
+                if [ -x "$BIN_DIR/dora" ]; then
+                  "$BIN_DIR/dora" --version 2>/dev/null | awk '{print $2}'
+                fi
+              }
+
+              INSTALLED_DORA_CLI_VERSION=$(get_installed_dora_cli_version | tr -d '\r')
+              if [ ! -x "$BIN_DIR/dora" ] || [ "$INSTALLED_DORA_CLI_VERSION" != "$TARGET_DORA_CLI_VERSION" ]; then
                 echo "[MoFA][Nix] 安装 dora-cli..."
                 cargo install --locked \
-                  --git https://github.com/dora-rs/dora.git \
-                  --rev b56884441c249ed5d0a6e4d066dea16a246d578d \
                   dora-cli \
+                  --version "$TARGET_DORA_CLI_VERSION" \
                   --root "$INSTALL_ROOT"
               fi
             else
@@ -89,7 +96,8 @@
                 pip install "dora-rs==$TARGET_DORA_RS_VERSION"
                 pip install -e "$ROOT/libs/dora-common" \
                   -e "$ROOT/node-hub/dora-text-segmenter" \
-                  -e "$ROOT/node-hub/dora-primespeech"
+                  -e "$ROOT/node-hub/dora-primespeech" \
+                  -e "$ROOT/node-hub/dora-asr"
                 touch "$VENV_DIR/.ready"
               fi
             else
@@ -165,7 +173,7 @@ PY
 
             echo "[MoFA][Nix] 启动 GUI..."
             cd "$ROOT"
-            cargo run --release
+            cargo run --release --bin mofa-studio
           '';
         };
       in

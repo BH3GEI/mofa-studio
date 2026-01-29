@@ -62,7 +62,7 @@ nix run .
 1. 自动安装/缓存 Rust toolchain、Node.js、CMake、PortAudio 等编译依赖。
 2. 在 `./.nix-mofa` 下 `cargo install` 固定版本的 `dora-cli`。
 3. 在 `./.venv-mofa` 创建 Python venv 并 `pip install -e` `libs/dora-common`、`node-hub/dora-text-segmenter`、`node-hub/dora-primespeech`。
-4. 强制将 `dora-rs` Python 包固定在 `0.3.12`（可用 `MOFA_DORA_RS_VERSION` 覆盖），避免 `message format v0.6` 与 `v0.5` 不兼容报错。
+4. 强制将 `dora-rs` Python 包固定在 `0.4.1`（可用 `MOFA_DORA_RS_VERSION` 覆盖），避免协议版本不兼容报错。
 5. `pkill -f dora` → `dora up` → `dora list`/`dora stop --grace-duration 0s …`，保证没有残留的 dataflow。
 6. `cargo run --release` 启动 Makepad GUI（`MOFA_AUTO_START=1` 会自动连上 dataflow）。
 
@@ -75,7 +75,8 @@ nix run .
 | `MOFA_STUDIO_DIR` | 指定源码路径（默认当前目录 `pwd`） |
 | `MOFA_STATE_DIR` | 指定 dora-cli 缓存目录（默认 `./.nix-mofa`） |
 | `MOFA_VENV_DIR` | 指定 Python venv 目录（默认 `./.venv-mofa`） |
-| `MOFA_DORA_RS_VERSION` | 控制安装的 `dora-rs` 版本（默认 `0.3.12`，用于匹配 `dora-cli`） |
+| `MOFA_DORA_CLI_VERSION` | 控制安装的 `dora-cli` 版本（默认 `0.4.1`） |
+| `MOFA_DORA_RS_VERSION` | 控制安装的 `dora-rs` 版本（默认 `0.4.1`，用于匹配 `dora-cli`） |
 | `MOFA_SKIP_BOOTSTRAP=1` | 跳过 dora/Python 依赖安装，适合二次启动或离线环境 |
 | `MOFA_DRY_RUN=1` | 只做环境检查/清理，验证完即退出，不启动 GUI |
 
@@ -87,7 +88,7 @@ MOFA_SKIP_BOOTSTRAP=1 nix --extra-experimental-features 'nix-command flakes' run
 
 若想先验证 `dora`/`dataflow` 流程但不弹出 GUI，可再加 `MOFA_DRY_RUN=1`。
 
-> **提示**：如果之前的 venv 已经安装了 `dora-rs 0.3.13+`，请至少执行一次不带 `MOFA_SKIP_BOOTSTRAP=1` 的 `nix run .`（或手动 `source .venv-mofa/bin/activate && pip install --upgrade --force-reinstall 'dora-rs==0.3.12'`）以确保协议版本一致。
+> **提示**：若之前的 venv 已安装 `dora-rs 0.3.x`，请至少执行一次不带 `MOFA_SKIP_BOOTSTRAP=1` 的 `nix run .`（或手动 `source .venv-mofa/bin/activate && pip install --upgrade --force-reinstall 'dora-rs==0.4.1'`）以确保协议版本一致。
 
 ## 5. 开发调试
 

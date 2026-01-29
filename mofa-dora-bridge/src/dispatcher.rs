@@ -155,6 +155,13 @@ impl DynamicNodeDispatcher {
                         binding.state = BridgeState::Connected;
                     }
                 }
+                Err(BridgeError::AlreadyConnected) => {
+                    info!("Bridge already connected: {}", node_id);
+                    if let Some(binding) = self.bindings.iter_mut().find(|b| &b.node_id == node_id)
+                    {
+                        binding.state = BridgeState::Connected;
+                    }
+                }
                 Err(e) => {
                     error!("Failed to connect bridge {}: {}", node_id, e);
                     errors.push(format!("{}: {}", node_id, e));
