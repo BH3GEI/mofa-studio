@@ -227,34 +227,6 @@ live_design! {
                 }
             }
 
-            mofa_fm_web_tab = <SidebarMenuButton> {
-                text: "MoFA FM (Web)"
-                draw_icon: {
-                    svg_file: dep("crate://self/resources/icons/webview.svg")
-                }
-            }
-
-            debate_tab = <SidebarMenuButton> {
-                text: "Debate"
-                draw_icon: {
-                    svg_file: dep("crate://self/resources/icons/chat.svg")
-                }
-            }
-
-            webview_demo_tab = <SidebarMenuButton> {
-                text: "WebView"
-                draw_icon: {
-                    svg_file: dep("crate://self/resources/icons/webview.svg")
-                }
-            }
-
-            personal_news_tab = <SidebarMenuButton> {
-                text: "Personal News"
-                draw_icon: {
-                    svg_file: dep("crate://self/resources/icons/user.svg")
-                }
-            }
-
             transcriber_tab = <SidebarMenuButton> {
                 text: "Transcriber"
                 draw_icon: {
@@ -276,6 +248,13 @@ live_design! {
                 }
             }
 
+            personal_news_tab = <SidebarMenuButton> {
+                text: "Personal News"
+                draw_icon: {
+                    svg_file: dep("crate://self/resources/icons/user.svg")
+                }
+            }
+
             note_taker_tab = <SidebarMenuButton> {
                 text: "Note Taker"
                 draw_icon: {
@@ -283,8 +262,36 @@ live_design! {
                 }
             }
 
+            debate_tab = <SidebarMenuButton> {
+                text: "Debate"
+                draw_icon: {
+                    svg_file: dep("crate://self/resources/icons/chat.svg")
+                }
+            }
+
+            mofa_fm_web_tab = <SidebarMenuButton> {
+                text: "MoFA FM (Web)"
+                draw_icon: {
+                    svg_file: dep("crate://self/resources/icons/webview.svg")
+                }
+            }
+
+            webview_demo_tab = <SidebarMenuButton> {
+                text: "WebView Demo 1"
+                draw_icon: {
+                    svg_file: dep("crate://self/resources/icons/webview.svg")
+                }
+            }
+
+            webview_placeholder_tab = <SidebarMenuButton> {
+                text: "WebView Demo 2"
+                draw_icon: {
+                    svg_file: dep("crate://self/resources/icons/webview.svg")
+                }
+            }
+
             hello_world_tab = <SidebarMenuButton> {
-                text: "Hello World"
+                text: "Hello World (Python)"
                 draw_icon: {
                     svg_file: dep("crate://self/resources/icons/start.svg")
                 }
@@ -294,13 +301,6 @@ live_design! {
                 text: "Hello World (Rust)"
                 draw_icon: {
                     svg_file: dep("crate://self/resources/icons/start.svg")
-                }
-            }
-
-            webview_placeholder_tab = <SidebarMenuButton> {
-                text: "WebView Placeholder"
-                draw_icon: {
-                    svg_file: dep("crate://self/resources/icons/webview.svg")
                 }
             }
 

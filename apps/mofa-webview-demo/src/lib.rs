@@ -14,7 +14,7 @@ pub struct MoFaWebViewDemoApp;
 impl MofaApp for MoFaWebViewDemoApp {
     fn info() -> AppInfo {
         AppInfo {
-            name: "WebView Demo",
+            name: "WebView Demo 1",
             id: "mofa-webview-demo",
             description: "Demonstrates WebView embedding with wry",
             tab_id: Some(live_id!(webview_demo_tab)),

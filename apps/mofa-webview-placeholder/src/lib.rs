@@ -12,7 +12,7 @@ pub struct MoFaWebViewPlaceholderApp;
 impl MofaApp for MoFaWebViewPlaceholderApp {
     fn info() -> AppInfo {
         AppInfo {
-            name: "WebView Placeholder",
+            name: "WebView Demo 2",
             id: "mofa-webview-placeholder",
             description: "Placeholder WebView app (replace with real frontend)",
             tab_id: Some(live_id!(webview_placeholder_tab)),

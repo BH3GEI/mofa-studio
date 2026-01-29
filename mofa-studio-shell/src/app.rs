@@ -1104,15 +1104,15 @@ impl App {
             PageId::Debate => ("MoFA Debate", "Multi-agent debate and discussion platform"),
             PageId::Settings => ("Settings", "Configure providers and preferences"),
             PageId::App => ("Demo App", "Select an app from the sidebar"),
-            PageId::WebViewDemo => ("WebView Demo", "Demonstrates WebView embedding with wry"),
+            PageId::WebViewDemo => ("WebView Demo 1", "Demonstrates WebView embedding with wry"),
             PageId::PersonalNews => ("Personal News", "Personal news broadcast"),
             PageId::Transcriber => ("AI Transcriber", "Audio/video transcription and summarization"),
             PageId::Podcast => ("Podcast Generator", "Generate podcast audio from scripts"),
             PageId::PodcastFactory => ("Book Cast", "Transform books into podcast series"),
             PageId::NoteTaker => ("Note Taker", "Web-based note taking workspace"),
-            PageId::HelloWorld => ("Hello World", "WebView demo starter app"),
+            PageId::HelloWorld => ("Hello World (Python)", "WebView demo starter app"),
             PageId::HelloWorldRust => ("Hello World (Rust)", "Rust-powered WebView demo app"),
-            PageId::WebViewPlaceholder => ("WebView Placeholder", "Placeholder WebView app"),
+            PageId::WebViewPlaceholder => ("WebView Demo 2", "Placeholder WebView app"),
             PageId::Plugin => ("Plugin", "Dynamic plugin"),
         };
 
