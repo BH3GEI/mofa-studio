@@ -267,6 +267,14 @@ PIP_BREAK_SYSTEM_PACKAGES=1 "$PYTHON_BIN" -m pip install --no-cache-dir --target
   "$PROJECT_ROOT/node-hub/dora-primespeech" \
   "$PROJECT_ROOT/node-hub/dora-asr"
 
+# Ensure package data for MoYoYo TTS is bundled (pip may skip non-code assets)
+MOYOYO_SRC="$PROJECT_ROOT/node-hub/dora-primespeech/dora_primespeech/moyoyo_tts"
+MOYOYO_DST="$PYTHON_SITE_PACKAGES/dora_primespeech/moyoyo_tts"
+if [ -d "$MOYOYO_SRC" ]; then
+  mkdir -p "$MOYOYO_DST"
+  rsync -a "$MOYOYO_SRC/" "$MOYOYO_DST/"
+fi
+
 echo "[8/9] Creating tool wrappers..."
 APP_BIN="$APP_RES/bin"
 mkdir -p "$APP_BIN"
@@ -279,6 +287,10 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 export PYTHONHOME="$HERE/python/Python.framework/Versions/__PY_EMBED_VERSION__"
 export PYTHONPATH="$HERE/python/site-packages"
+export DYLD_LIBRARY_PATH="$PYTHONHOME:$PYTHONHOME/lib:${DYLD_LIBRARY_PATH:-}"
+if [ -x /usr/bin/arch ] && /usr/bin/arch -arm64 /usr/bin/true >/dev/null 2>&1; then
+  exec /usr/bin/arch -arm64 "$HERE/python/bin/python3" -m dora_asr.main "$@"
+fi
 exec "$HERE/python/bin/python3" -m dora_asr.main "$@"
 EOF
 sed -i '' "s/__PY_EMBED_VERSION__/${PYTHON_EMBED_VERSION}/g" "$APP_BIN/dora-asr"
@@ -290,6 +302,10 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 export PYTHONHOME="$HERE/python/Python.framework/Versions/__PY_EMBED_VERSION__"
 export PYTHONPATH="$HERE/python/site-packages"
+export DYLD_LIBRARY_PATH="$PYTHONHOME:$PYTHONHOME/lib:${DYLD_LIBRARY_PATH:-}"
+if [ -x /usr/bin/arch ] && /usr/bin/arch -arm64 /usr/bin/true >/dev/null 2>&1; then
+  exec /usr/bin/arch -arm64 "$HERE/python/bin/python3" -m dora_text_segmenter.main "$@"
+fi
 exec "$HERE/python/bin/python3" -m dora_text_segmenter.main "$@"
 EOF
 sed -i '' "s/__PY_EMBED_VERSION__/${PYTHON_EMBED_VERSION}/g" "$APP_BIN/dora-text-segmenter"
@@ -301,6 +317,10 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 export PYTHONHOME="$HERE/python/Python.framework/Versions/__PY_EMBED_VERSION__"
 export PYTHONPATH="$HERE/python/site-packages"
+export DYLD_LIBRARY_PATH="$PYTHONHOME:$PYTHONHOME/lib:${DYLD_LIBRARY_PATH:-}"
+if [ -x /usr/bin/arch ] && /usr/bin/arch -arm64 /usr/bin/true >/dev/null 2>&1; then
+  exec /usr/bin/arch -arm64 "$HERE/python/bin/python3" -m dora_primespeech.main "$@"
+fi
 exec "$HERE/python/bin/python3" -m dora_primespeech.main "$@"
 EOF
 sed -i '' "s/__PY_EMBED_VERSION__/${PYTHON_EMBED_VERSION}/g" "$APP_BIN/dora-primespeech"
@@ -356,12 +376,18 @@ if [ -d "$APP_RES/models" ]; then
 fi
 
 export MOFA_STUDIO_DIR="$RUNTIME_REPO"
+export MOFA_PACKAGED=1
+export MOFA_FORCE_DORA_RESTART=1
 export MOFA_AUTO_START=1
+export MOFA_DORA_BIN="$APP_BIN/dora"
 export PYTHONHOME="$APP_RES/python/Python.framework/Versions/__PY_EMBED_VERSION__"
 export PYTHONPATH="$APP_RES/python/site-packages"
 export DYLD_LIBRARY_PATH="$PYTHONHOME:$PYTHONHOME/lib:${DYLD_LIBRARY_PATH:-}"
 export PATH="$APP_BIN:$APP_RES/python/bin:$PYTHONHOME/bin:$PATH"
 
+if [ -x /usr/bin/arch ] && /usr/bin/arch -arm64 /usr/bin/true >/dev/null 2>&1; then
+  exec /usr/bin/arch -arm64 "$APP_BIN/mofa-studio"
+fi
 exec "$APP_BIN/mofa-studio"
 EOF
 sed -i '' "s/__PY_EMBED_VERSION__/${PYTHON_EMBED_VERSION}/g" "$APP_MACOS/MoFAStudio"

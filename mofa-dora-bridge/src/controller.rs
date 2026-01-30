@@ -64,6 +64,15 @@ pub struct DataflowController {
 }
 
 impl DataflowController {
+    fn dora_command() -> Command {
+        if let Ok(path) = std::env::var("MOFA_DORA_BIN") {
+            let trimmed = path.trim();
+            if !trimmed.is_empty() {
+                return Command::new(trimmed);
+            }
+        }
+        Command::new("dora")
+    }
     /// Create a new controller for a dataflow
     pub fn new(dataflow_path: impl AsRef<Path>) -> BridgeResult<Self> {
         let original_path = dataflow_path.as_ref();
@@ -123,9 +132,24 @@ impl DataflowController {
 
     /// Ensure dora daemon is running
     pub fn ensure_daemon(&mut self) -> BridgeResult<()> {
+        let force_restart = std::env::var("MOFA_FORCE_DORA_RESTART")
+            .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+            .unwrap_or(false)
+            || std::env::var("MOFA_PACKAGED")
+                .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+                .unwrap_or(false);
+
+        if force_restart {
+            let _ = Self::dora_command()
+                .arg("down")
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status();
+        }
+
         // Check if daemon is already running by using `dora list`
         // If it succeeds, daemon is running
-        let status = Command::new("dora")
+        let status = Self::dora_command()
             .arg("list")
             .stdout(Stdio::null())
             .stderr(Stdio::null())
@@ -138,7 +162,7 @@ impl DataflowController {
             }
             _ => {
                 info!("Starting dora daemon...");
-                let child = Command::new("dora")
+                let child = Self::dora_command()
                     .arg("up")
                     .stdout(Stdio::null())
                     .stderr(Stdio::null())
@@ -188,7 +212,7 @@ impl DataflowController {
             .parent()
             .ok_or_else(|| BridgeError::StartFailed("Invalid dataflow path".to_string()))?;
 
-        let mut cmd = Command::new("dora");
+        let mut cmd = Self::dora_command();
         cmd.arg("start")
             // Use the absolute path so dora always resolves node paths relative to
             // the actual dataflow file location.
@@ -278,7 +302,7 @@ impl DataflowController {
         info!("Stopping dataflow: {} (grace: {})", dataflow_id, grace_str);
 
         // Build dora stop command
-        let mut cmd = Command::new("dora");
+        let mut cmd = Self::dora_command();
         cmd.arg("stop").arg(&dataflow_id);
 
         // Add grace duration if specified
@@ -314,7 +338,7 @@ impl DataflowController {
                 ref started_at,
             } => {
                 // Query dora for node status
-                let output = Command::new("dora")
+                let output = Self::dora_command()
                     .arg("list")
                     .output()
                     .map_err(|e| BridgeError::Unknown(format!("Failed to query status: {}", e)))?;

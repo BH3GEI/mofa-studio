@@ -23,6 +23,20 @@ fn env_path(var: &str) -> Option<PathBuf> {
     })
 }
 
+fn dataflow_file_name() -> String {
+    if let Ok(name) = std::env::var("MOFA_DATAFLOW_FILE") {
+        if !name.trim().is_empty() {
+            return name;
+        }
+    }
+    match std::env::var("MOFA_PACKAGED") {
+        Ok(flag) if flag == "1" || flag.eq_ignore_ascii_case("true") => {
+            "voice-chat.packaged.yml".to_string()
+        }
+        _ => "voice-chat.yml".to_string(),
+    }
+}
+
 pub fn dataflow_dir_from_env(app: &str) -> Option<PathBuf> {
     if let Some(dir) = env_path("MOFA_DATAFLOW_DIR") {
         return Some(dir);
@@ -53,12 +67,24 @@ fn dataflow_dir_from_cwd(app: &str) -> Option<PathBuf> {
 }
 
 fn yaml_path_in_dir(dir: &Path) -> Option<PathBuf> {
-    let path = dir.join("voice-chat.yml");
-    if path.exists() {
-        Some(path)
-    } else {
-        None
+    if std::env::var("MOFA_DATAFLOW_FILE").is_err() {
+        let packaged = dir.join("voice-chat.packaged.yml");
+        if packaged.exists() {
+            return Some(packaged);
+        }
     }
+    let name = dataflow_file_name();
+    let path = dir.join(&name);
+    if path.exists() {
+        return Some(path);
+    }
+    if name != "voice-chat.yml" {
+        let fallback = dir.join("voice-chat.yml");
+        if fallback.exists() {
+            return Some(fallback);
+        }
+    }
+    None
 }
 
 /// Role configuration loaded from TOML file

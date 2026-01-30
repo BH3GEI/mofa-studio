@@ -20,21 +20,68 @@ use mofa_ui::{ConnectionStatus, MofaHeroWidgetExt};
 use super::{ChatMessageEntry, MoFaDebateScreen};
 
 impl MoFaDebateScreen {
+    fn dataflow_file_name() -> String {
+        if let Ok(name) = std::env::var("MOFA_DATAFLOW_FILE") {
+            if !name.trim().is_empty() {
+                return name;
+            }
+        }
+        match std::env::var("MOFA_PACKAGED") {
+            Ok(flag) if flag == "1" || flag.eq_ignore_ascii_case("true") => {
+                "voice-chat.packaged.yml".to_string()
+            }
+            _ => "voice-chat.yml".to_string(),
+        }
+    }
+
     fn dataflow_path_from_env() -> Option<PathBuf> {
+        let explicit = std::env::var("MOFA_DATAFLOW_FILE")
+            .ok()
+            .map(|v| v.trim().to_string())
+            .filter(|v| !v.is_empty());
+        let filename = explicit.clone().unwrap_or_else(Self::dataflow_file_name);
         if let Ok(dir) = std::env::var("MOFA_DATAFLOW_DIR") {
-            let path = PathBuf::from(dir).join("voice-chat.yml");
+            let base = PathBuf::from(&dir);
+            if explicit.is_none() {
+                let packaged = base.join("voice-chat.packaged.yml");
+                if packaged.exists() {
+                    return Some(packaged);
+                }
+            }
+            let path = base.join(&filename);
             if path.exists() {
                 return Some(path);
             }
         }
         if let Ok(root) = std::env::var("MOFA_STUDIO_DIR") {
-            let path = PathBuf::from(root)
+            let root_path = PathBuf::from(root);
+            if explicit.is_none() {
+                let packaged = root_path
+                    .join("apps")
+                    .join("mofa-debate")
+                    .join("dataflow")
+                    .join("voice-chat.packaged.yml");
+                if packaged.exists() {
+                    return Some(packaged);
+                }
+            }
+            let path = root_path
                 .join("apps")
                 .join("mofa-debate")
                 .join("dataflow")
-                .join("voice-chat.yml");
+                .join(&filename);
             if path.exists() {
                 return Some(path);
+            }
+            if filename != "voice-chat.yml" {
+                let fallback = root_path
+                    .join("apps")
+                    .join("mofa-debate")
+                    .join("dataflow")
+                    .join("voice-chat.yml");
+                if fallback.exists() {
+                    return Some(fallback);
+                }
             }
         }
         None
@@ -58,17 +105,48 @@ impl MoFaDebateScreen {
 
         let dataflow_path = Self::dataflow_path_from_env().or_else(|| {
             std::env::current_dir().ok().and_then(|cwd| {
+                let explicit = std::env::var("MOFA_DATAFLOW_FILE")
+                    .ok()
+                    .map(|v| v.trim().to_string())
+                    .filter(|v| !v.is_empty());
+                let filename = explicit.clone().unwrap_or_else(Self::dataflow_file_name);
                 let app_path = cwd
                     .join("apps")
                     .join("mofa-debate")
                     .join("dataflow")
-                    .join("voice-chat.yml");
+                    .join(&filename);
+                if explicit.is_none() {
+                    let packaged = cwd
+                        .join("apps")
+                        .join("mofa-debate")
+                        .join("dataflow")
+                        .join("voice-chat.packaged.yml");
+                    if packaged.exists() {
+                        return Some(packaged);
+                    }
+                }
                 if app_path.exists() {
                     return Some(app_path);
                 }
-                let local_path = cwd.join("dataflow").join("voice-chat.yml");
+                if filename != "voice-chat.yml" {
+                    let fallback = cwd
+                        .join("apps")
+                        .join("mofa-debate")
+                        .join("dataflow")
+                        .join("voice-chat.yml");
+                    if fallback.exists() {
+                        return Some(fallback);
+                    }
+                }
+                let local_path = cwd.join("dataflow").join(&filename);
                 if local_path.exists() {
                     return Some(local_path);
+                }
+                if filename != "voice-chat.yml" {
+                    let local_fallback = cwd.join("dataflow").join("voice-chat.yml");
+                    if local_fallback.exists() {
+                        return Some(local_fallback);
+                    }
                 }
                 None
             })
