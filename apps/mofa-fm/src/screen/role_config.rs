@@ -5,12 +5,61 @@
 use regex::Regex;
 use serde::Deserialize;
 use std::path::PathBuf;
+use std::path::Path;
 
 /// Available PrimeSpeech voices
 pub const VOICE_OPTIONS: &[&str] = &[
     "Zhao Daniu", "Chen Yifan", "Luo Xiang", "Doubao", "Yang Mi",
     "Ma Yun", "Maple", "Cove", "Ellen", "Juniper",
 ];
+
+fn env_path(var: &str) -> Option<PathBuf> {
+    std::env::var(var).ok().map(PathBuf::from).and_then(|p| {
+        if p.exists() {
+            Some(p)
+        } else {
+            None
+        }
+    })
+}
+
+pub fn dataflow_dir_from_env(app: &str) -> Option<PathBuf> {
+    if let Some(dir) = env_path("MOFA_DATAFLOW_DIR") {
+        return Some(dir);
+    }
+    if let Some(root) = env_path("MOFA_STUDIO_DIR") {
+        let dir = root.join("apps").join(app).join("dataflow");
+        if dir.exists() {
+            return Some(dir);
+        }
+    }
+    None
+}
+
+fn dataflow_dir_from_cwd(app: &str) -> Option<PathBuf> {
+    let cwd = std::env::current_dir().ok()?;
+
+    let app_path = cwd.join("apps").join(app).join("dataflow");
+    if app_path.exists() {
+        return Some(app_path);
+    }
+
+    let local_path = cwd.join("dataflow");
+    if local_path.exists() {
+        return Some(local_path);
+    }
+
+    None
+}
+
+fn yaml_path_in_dir(dir: &Path) -> Option<PathBuf> {
+    let path = dir.join("voice-chat.yml");
+    if path.exists() {
+        Some(path)
+    } else {
+        None
+    }
+}
 
 /// Role configuration loaded from TOML file
 #[derive(Debug, Clone, Default)]
@@ -238,19 +287,16 @@ pub fn get_yaml_path(dataflow_path: Option<&PathBuf>) -> Option<PathBuf> {
         }
     }
 
-    // Fallback: search common locations
-    let cwd = std::env::current_dir().ok()?;
-
-    // First try: apps/mofa-fm/dataflow/voice-chat.yml (workspace root)
-    let app_path = cwd.join("apps").join("mofa-fm").join("dataflow").join("voice-chat.yml");
-    if app_path.exists() {
-        return Some(app_path);
+    if let Some(dir) = dataflow_dir_from_env("mofa-fm") {
+        if let Some(path) = yaml_path_in_dir(&dir) {
+            return Some(path);
+        }
     }
 
-    // Second try: dataflow/voice-chat.yml (run from app directory)
-    let local_path = cwd.join("dataflow").join("voice-chat.yml");
-    if local_path.exists() {
-        return Some(local_path);
+    if let Some(dir) = dataflow_dir_from_cwd("mofa-fm") {
+        if let Some(path) = yaml_path_in_dir(&dir) {
+            return Some(path);
+        }
     }
 
     None
@@ -275,21 +321,13 @@ pub fn get_role_config_path(dataflow_path: Option<&PathBuf>, role: &str) -> Path
         }
     }
 
-    // Fallback: search common locations
-    let cwd = std::env::current_dir().unwrap_or_default();
-
-    // First try: apps/mofa-fm/dataflow/ (workspace root)
-    let app_path = cwd.join("apps").join("mofa-fm").join("dataflow").join(config_name);
-    if app_path.exists() {
-        return app_path;
+    if let Some(dir) = dataflow_dir_from_env("mofa-fm").or_else(|| dataflow_dir_from_cwd("mofa-fm")) {
+        let config_path = dir.join(config_name);
+        if config_path.exists() {
+            return config_path;
+        }
+        return config_path;
     }
 
-    // Second try: dataflow/ (run from app directory)
-    let local_path = cwd.join("dataflow").join(config_name);
-    if local_path.exists() {
-        return local_path;
-    }
-
-    // Default
-    app_path
+    PathBuf::from(config_name)
 }

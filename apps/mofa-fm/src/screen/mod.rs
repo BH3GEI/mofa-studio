@@ -820,21 +820,7 @@ impl MoFaFMScreen {
         }
 
         // Also update VOICE_NAME in YAML dataflow file
-        // Find the YAML path - either from dataflow_path or search common locations
-        let yaml_path = self.dataflow_path.clone().or_else(|| {
-            let cwd = std::env::current_dir().ok()?;
-            // First try: apps/mofa-fm/dataflow/voice-chat.yml (workspace root)
-            let app_path = cwd.join("apps").join("mofa-fm").join("dataflow").join("voice-chat.yml");
-            if app_path.exists() {
-                return Some(app_path);
-            }
-            // Second try: dataflow/voice-chat.yml (run from app directory)
-            let local_path = cwd.join("dataflow").join("voice-chat.yml");
-            if local_path.exists() {
-                return Some(local_path);
-            }
-            None
-        });
+        let yaml_path = crate::screen::role_config::get_yaml_path(self.dataflow_path.as_ref());
 
         if let Some(ref yaml_path) = yaml_path {
             match crate::screen::role_config::update_yaml_voice(yaml_path, role, &config.voice) {
@@ -1332,31 +1318,17 @@ impl MoFaFMScreen {
 
     /// Get the path to study-context.md in the dataflow directory
     fn get_context_path(&self) -> PathBuf {
-        // Try to use the dataflow_path if set, otherwise search common locations
-        if let Some(ref dataflow_path) = self.dataflow_path {
-            // Get directory containing the dataflow yaml
-            if let Some(parent) = dataflow_path.parent() {
+        if let Some(yaml_path) = crate::screen::role_config::get_yaml_path(self.dataflow_path.as_ref()) {
+            if let Some(parent) = yaml_path.parent() {
                 return parent.join("study-context.md");
             }
         }
 
-        // Fallback: search common locations
-        let cwd = std::env::current_dir().unwrap_or_default();
-
-        // First try: apps/mofa-fm/dataflow/study-context.md (workspace root)
-        let app_path = cwd.join("apps").join("mofa-fm").join("dataflow").join("study-context.md");
-        if app_path.exists() {
-            return app_path;
+        if let Some(dir) = crate::screen::role_config::dataflow_dir_from_env("mofa-fm") {
+            return dir.join("study-context.md");
         }
 
-        // Second try: dataflow/study-context.md (run from app directory)
-        let local_path = cwd.join("dataflow").join("study-context.md");
-        if local_path.exists() {
-            return local_path;
-        }
-
-        // Default: assume workspace root structure
-        app_path
+        std::path::PathBuf::from("study-context.md")
     }
 }
 

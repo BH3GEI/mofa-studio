@@ -45,23 +45,7 @@ impl MoFaFMScreen {
         // Start timer to poll for dora events (100ms interval)
         self.dora_timer = cx.start_interval(0.1);
 
-        // Look for default dataflow relative to current working directory
-        // Check multiple possible locations
-        let dataflow_path = std::env::current_dir()
-            .ok()
-            .and_then(|cwd| {
-                // First try: apps/mofa-fm/dataflow/voice-chat.yml (when running from workspace root)
-                let app_path = cwd.join("apps").join("mofa-fm").join("dataflow").join("voice-chat.yml");
-                if app_path.exists() {
-                    return Some(app_path);
-                }
-                // Second try: dataflow/voice-chat.yml (when running from app directory)
-                let local_path = cwd.join("dataflow").join("voice-chat.yml");
-                if local_path.exists() {
-                    return Some(local_path);
-                }
-                None
-            });
+        let dataflow_path = crate::screen::role_config::get_yaml_path(None);
         self.dataflow_path = dataflow_path;
 
         ::log::info!("Dora integration initialized, dataflow: {:?}", self.dataflow_path);
@@ -440,17 +424,8 @@ impl MoFaFMScreen {
             if has_deepseek { "✓" } else { "✗" }
         ));
 
-        // Find the dataflow file relative to current working directory
-        let dataflow_path = self.dataflow_path.clone().unwrap_or_else(|| {
-            let cwd = std::env::current_dir().unwrap_or_default();
-            // First try: apps/mofa-fm/dataflow/voice-chat.yml (when running from workspace root)
-            let app_path = cwd.join("apps").join("mofa-fm").join("dataflow").join("voice-chat.yml");
-            if app_path.exists() {
-                return app_path;
-            }
-            // Fallback: dataflow/voice-chat.yml (when running from app directory)
-            cwd.join("dataflow").join("voice-chat.yml")
-        });
+        let dataflow_path = crate::screen::role_config::get_yaml_path(self.dataflow_path.as_ref())
+            .unwrap_or_else(|| PathBuf::from("voice-chat.yml"));
 
         if !dataflow_path.exists() {
             self.add_log(cx, &format!("[ERROR] [App] Dataflow not found: {:?}", dataflow_path));

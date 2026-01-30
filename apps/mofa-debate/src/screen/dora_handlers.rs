@@ -20,6 +20,25 @@ use mofa_ui::{ConnectionStatus, MofaHeroWidgetExt};
 use super::{ChatMessageEntry, MoFaDebateScreen};
 
 impl MoFaDebateScreen {
+    fn dataflow_path_from_env() -> Option<PathBuf> {
+        if let Ok(dir) = std::env::var("MOFA_DATAFLOW_DIR") {
+            let path = PathBuf::from(dir).join("voice-chat.yml");
+            if path.exists() {
+                return Some(path);
+            }
+        }
+        if let Ok(root) = std::env::var("MOFA_STUDIO_DIR") {
+            let path = PathBuf::from(root)
+                .join("apps")
+                .join("mofa-debate")
+                .join("dataflow")
+                .join("voice-chat.yml");
+            if path.exists() {
+                return Some(path);
+            }
+        }
+        None
+    }
     // =====================================================
     // Dora Integration Methods
     // =====================================================
@@ -37,24 +56,22 @@ impl MoFaDebateScreen {
         // Start timer to poll for dora events (100ms interval)
         self.dora_timer = cx.start_interval(0.1);
 
-        // Look for default dataflow relative to current working directory
-        // Check multiple possible locations
-        let dataflow_path = std::env::current_dir().ok().and_then(|cwd| {
-            // First try: apps/mofa-debate/dataflow/voice-chat.yml (when running from workspace root)
-            let app_path = cwd
-                .join("apps")
-                .join("mofa-debate")
-                .join("dataflow")
-                .join("voice-chat.yml");
-            if app_path.exists() {
-                return Some(app_path);
-            }
-            // Second try: dataflow/voice-chat.yml (when running from app directory)
-            let local_path = cwd.join("dataflow").join("voice-chat.yml");
-            if local_path.exists() {
-                return Some(local_path);
-            }
-            None
+        let dataflow_path = Self::dataflow_path_from_env().or_else(|| {
+            std::env::current_dir().ok().and_then(|cwd| {
+                let app_path = cwd
+                    .join("apps")
+                    .join("mofa-debate")
+                    .join("dataflow")
+                    .join("voice-chat.yml");
+                if app_path.exists() {
+                    return Some(app_path);
+                }
+                let local_path = cwd.join("dataflow").join("voice-chat.yml");
+                if local_path.exists() {
+                    return Some(local_path);
+                }
+                None
+            })
         });
         self.dataflow_path = dataflow_path;
 
@@ -424,21 +441,11 @@ impl MoFaDebateScreen {
             ),
         );
 
-        // Find the dataflow file relative to current working directory
-        let dataflow_path = self.dataflow_path.clone().unwrap_or_else(|| {
-            let cwd = std::env::current_dir().unwrap_or_default();
-            // First try: apps/mofa-debate/dataflow/voice-chat.yml (when running from workspace root)
-            let app_path = cwd
-                .join("apps")
-                .join("mofa-debate")
-                .join("dataflow")
-                .join("voice-chat.yml");
-            if app_path.exists() {
-                return app_path;
-            }
-            // Fallback: dataflow/voice-chat.yml (when running from app directory)
-            cwd.join("dataflow").join("voice-chat.yml")
-        });
+        let dataflow_path = self
+            .dataflow_path
+            .clone()
+            .or_else(Self::dataflow_path_from_env)
+            .unwrap_or_else(|| PathBuf::from("voice-chat.yml"));
 
         if !dataflow_path.exists() {
             self.add_log(
