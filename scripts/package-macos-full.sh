@@ -37,11 +37,23 @@ version_from_cargo() {
   local shell_toml="$PROJECT_ROOT/mofa-studio-shell/Cargo.toml"
   local root_toml="$PROJECT_ROOT/Cargo.toml"
   local ver=""
+  local rg_cmd="rg"
+  if ! command -v rg >/dev/null 2>&1; then
+    rg_cmd=""
+  fi
   if [ -f "$shell_toml" ]; then
-    ver="$(rg -n '^version\s*=' "$shell_toml" 2>/dev/null | head -n 1 | awk -F'"' '{print $2}' || true)"
+    if [ -n "$rg_cmd" ]; then
+      ver="$(rg -n '^version\\s*=' "$shell_toml" 2>/dev/null | head -n 1 | awk -F'\"' '{print $2}' || true)"
+    else
+      ver="$(grep -E '^version[[:space:]]*=' "$shell_toml" 2>/dev/null | head -n 1 | awk -F'\"' '{print $2}' || true)"
+    fi
   fi
   if [ -z "$ver" ] && [ -f "$root_toml" ]; then
-    ver="$(rg -n '^version\s*=' "$root_toml" 2>/dev/null | head -n 1 | awk -F'"' '{print $2}' || true)"
+    if [ -n "$rg_cmd" ]; then
+      ver="$(rg -n '^version\\s*=' "$root_toml" 2>/dev/null | head -n 1 | awk -F'\"' '{print $2}' || true)"
+    else
+      ver="$(grep -E '^version[[:space:]]*=' "$root_toml" 2>/dev/null | head -n 1 | awk -F'\"' '{print $2}' || true)"
+    fi
   fi
   if [ -z "$ver" ]; then
     ver="0.0.0"
@@ -238,6 +250,22 @@ if [ -f "$PY_VER_DIR/Python" ] && command -v install_name_tool >/dev/null; then
     fi
   fi
 fi
+
+# Fix SSL/crypto dylib paths for embedded modules
+if command -v install_name_tool >/dev/null; then
+  SSL_SO="$PY_VER_DIR/lib/python3.11/lib-dynload/_ssl.cpython-311-darwin.so"
+  HASH_SO="$PY_VER_DIR/lib/python3.11/lib-dynload/_hashlib.cpython-311-darwin.so"
+  if [ -f "$SSL_SO" ]; then
+    install_name_tool -change "/Library/Frameworks/Python.framework/Versions/$PYTHON_EMBED_VERSION/lib/libssl.3.dylib" \
+      "@loader_path/../../lib/libssl.3.dylib" "$SSL_SO" || true
+    install_name_tool -change "/Library/Frameworks/Python.framework/Versions/$PYTHON_EMBED_VERSION/lib/libcrypto.3.dylib" \
+      "@loader_path/../../lib/libcrypto.3.dylib" "$SSL_SO" || true
+  fi
+  if [ -f "$HASH_SO" ]; then
+    install_name_tool -change "/Library/Frameworks/Python.framework/Versions/$PYTHON_EMBED_VERSION/lib/libcrypto.3.dylib" \
+      "@loader_path/../../lib/libcrypto.3.dylib" "$HASH_SO" || true
+  fi
+fi
 chmod -R u+w "$PYTHON_FRAMEWORK_DST" 2>/dev/null || true
 /usr/bin/xattr -dr com.apple.quarantine "$PYTHON_FRAMEWORK_DST" 2>/dev/null || true
 if command -v codesign >/dev/null; then
@@ -255,6 +283,12 @@ if command -v codesign >/dev/null; then
       codesign --force --sign - "$PY_VER_DIR/Resources/Python.app/Contents/MacOS/Python" || true
     fi
   fi
+  if [ -f "$SSL_SO" ]; then
+    codesign --force --sign - "$SSL_SO" || true
+  fi
+  if [ -f "$HASH_SO" ]; then
+    codesign --force --sign - "$HASH_SO" || true
+  fi
 fi
 
 echo "[7/9] Installing Python dependencies..."
@@ -266,6 +300,13 @@ PIP_BREAK_SYSTEM_PACKAGES=1 "$PYTHON_BIN" -m pip install --no-cache-dir --target
   "$PROJECT_ROOT/node-hub/dora-text-segmenter" \
   "$PROJECT_ROOT/node-hub/dora-primespeech" \
   "$PROJECT_ROOT/node-hub/dora-asr"
+
+# Transcriber deps (faster-whisper, openai)
+if [ -f "$PROJECT_ROOT/apps/mofa-transcriber/python/requirements.txt" ]; then
+  PIP_BREAK_SYSTEM_PACKAGES=1 "$PYTHON_BIN" -m pip install --no-cache-dir --target "$PYTHON_SITE_PACKAGES" \
+    -r "$PROJECT_ROOT/apps/mofa-transcriber/python/requirements.txt" \
+    -c "$PROJECT_ROOT/apps/mofa-transcriber/python/constraints.txt"
+fi
 
 # Ensure package data for MoYoYo TTS is bundled (pip may skip non-code assets)
 MOYOYO_SRC="$PROJECT_ROOT/node-hub/dora-primespeech/dora_primespeech/moyoyo_tts"
@@ -280,6 +321,19 @@ APP_BIN="$APP_RES/bin"
 mkdir -p "$APP_BIN"
 cp "$TOOLS_DIR/bin/dora" "$APP_BIN/dora"
 chmod +x "$APP_BIN/dora"
+
+# Wrap dora to raise file descriptor limit before daemon/coordinator spawn
+if file "$APP_BIN/dora" | grep -q "Mach-O"; then
+  mv "$APP_BIN/dora" "$APP_BIN/dora-bin"
+  cat > "$APP_BIN/dora" << 'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+ulimit -n 65535 || true
+HERE="$(cd "$(dirname "$0")" && pwd)"
+exec "$HERE/dora-bin" "$@"
+EOF
+  chmod +x "$APP_BIN/dora"
+fi
 
 cat > "$APP_BIN/dora-asr" << 'EOF'
 #!/usr/bin/env bash
@@ -380,6 +434,8 @@ export MOFA_PACKAGED=1
 export MOFA_FORCE_DORA_RESTART=1
 export MOFA_AUTO_START=1
 export MOFA_DORA_BIN="$APP_BIN/dora"
+export MOFA_PYTHON="$APP_RES/python/Python.framework/Versions/__PY_EMBED_VERSION__/bin/python3"
+export MOFA_TRANSCRIBER_PYTHON="$APP_RES/python/Python.framework/Versions/__PY_EMBED_VERSION__/bin/python3"
 export PYTHONHOME="$APP_RES/python/Python.framework/Versions/__PY_EMBED_VERSION__"
 export PYTHONPATH="$APP_RES/python/site-packages"
 export DYLD_LIBRARY_PATH="$PYTHONHOME:$PYTHONHOME/lib:${DYLD_LIBRARY_PATH:-}"

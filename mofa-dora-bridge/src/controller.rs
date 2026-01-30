@@ -140,8 +140,9 @@ impl DataflowController {
                 .unwrap_or(false);
 
         if force_restart {
+            // dora CLI uses `destroy` (not `down`) to stop coordinator/daemon.
             let _ = Self::dora_command()
-                .arg("down")
+                .arg("destroy")
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
                 .status();
@@ -173,8 +174,23 @@ impl DataflowController {
 
                 self.daemon_process = Some(child);
 
-                // Wait for daemon to be ready
-                std::thread::sleep(Duration::from_millis(1000));
+                // Wait for daemon to be ready (avoid race with dora start)
+                let ready_deadline = Instant::now() + Duration::from_secs(10);
+                loop {
+                    let status = Self::dora_command()
+                        .arg("list")
+                        .stdout(Stdio::null())
+                        .stderr(Stdio::null())
+                        .status();
+                    if matches!(status, Ok(s) if s.success()) {
+                        break;
+                    }
+                    if Instant::now() >= ready_deadline {
+                        warn!("Dora daemon did not become ready within 10s");
+                        break;
+                    }
+                    std::thread::sleep(Duration::from_millis(300));
+                }
                 Ok(())
             }
         }

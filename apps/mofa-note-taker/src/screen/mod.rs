@@ -324,7 +324,27 @@ fn find_embedded_python_cmd() -> Option<String> {
     None
 }
 
+fn env_python_override() -> Option<String> {
+    if let Ok(cmd) = std::env::var("MOFA_PYTHON") {
+        if !cmd.trim().is_empty() {
+            return Some(cmd);
+        }
+    }
+    None
+}
+
 fn load_python_config() -> String {
+    if let Some(cmd) = env_python_override() {
+        return cmd;
+    }
+    let packaged = std::env::var("MOFA_PACKAGED")
+        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false);
+    if packaged {
+        if let Some(cmd) = find_embedded_python_cmd() {
+            return cmd;
+        }
+    }
     let config_path = get_config_path();
     if let Ok(content) = fs::read_to_string(&config_path) {
         if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
