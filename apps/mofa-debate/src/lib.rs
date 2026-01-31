@@ -1,21 +1,24 @@
 //! MoFA Debate App - Multi-agent debate platform
 
 pub mod audio_player;
-pub mod dora_integration;
 pub mod screen;
 
-pub use dora_integration::{DoraCommand, DoraEvent, DoraIntegration};
 // Re-export shared modules from mofa-ui
 pub use mofa_ui::{
-    // MofaHero widget
-    ConnectionStatus, MofaHero, MofaHeroAction, MofaHeroRef, MofaHeroWidgetExt,
+    AudioDeviceInfo,
     // Audio infrastructure
-    AudioManager, AudioDeviceInfo,
+    AudioManager,
+    // MofaHero widget
+    ConnectionStatus,
+    MofaHero,
+    MofaHeroAction,
+    MofaHeroRef,
+    MofaHeroWidgetExt,
 };
 pub use screen::MoFaDebateScreen;
 pub use screen::MoFaDebateScreenWidgetRefExt; // Export WidgetRefExt for timer control
 
-use makepad_widgets::{Cx, live_id, LiveId};
+use makepad_widgets::{live_id, Cx, LiveId};
 use mofa_widgets::{AppInfo, MofaApp};
 
 /// MoFA Debate app descriptor
@@ -41,8 +44,7 @@ impl MofaApp for MoFaDebateApp {
     }
 }
 
-/// Register all MoFA FM widgets with Makepad
-/// (Kept for backwards compatibility - calls DoraApp::live_design)
+/// Register all MoFA Debate widgets with Makepad
 pub fn live_design(cx: &mut Cx) {
     MoFaDebateApp::live_design(cx);
 }
