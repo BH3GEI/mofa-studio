@@ -1,5 +1,5 @@
 {
-  description = "MoFA Studio Pure - Rust UI only (no Dora/Python backend)";
+  description = "MoFA Studio - Rust UI with Python backends (simplified)";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
@@ -17,11 +17,13 @@
         };
 
         rustToolchain = pkgs.rust-bin.stable.latest.default;
+        python = pkgs.python312;
 
         runScript = pkgs.writeShellApplication {
           name = "run-mofa";
           runtimeInputs = [
             rustToolchain
+            python
             pkgs.git
             pkgs.cmake
             pkgs.pkg-config
@@ -39,7 +41,15 @@
 
             export CARGO_HOME="''${MOFA_CARGO_HOME:-$ROOT/.cargo}"
             
-            echo "[MoFA][Nix] Pure version - building Rust only..."
+            # Setup Python venv if needed
+            VENV_DIR="''${MOFA_VENV_DIR:-$ROOT/.venv-mofa}"
+            if [ ! -d "$VENV_DIR" ]; then
+              echo "[MoFA][Nix] 创建 Python venv..."
+              python3 -m venv "$VENV_DIR"
+            fi
+            source "$VENV_DIR/bin/activate"
+            
+            echo "[MoFA][Nix] 启动应用 (Python + Rust)..."
             cd "$ROOT"
             cargo run --release --bin mofa-studio
           '';
@@ -54,6 +64,7 @@
         devShells.default = pkgs.mkShell {
           packages = [
             rustToolchain
+            python
             pkgs.git
             pkgs.cmake
             pkgs.pkg-config

@@ -1,42 +1,59 @@
 # MoFA Studio - Pixi Configuration
-# Replaces setup_isolated_env.sh and install_all_packages.sh
+# Simplified version with Python runtime (no Dora dataflow)
 # Usage: pixi install && pixi run setup
 
 [project]
 name = "mofa-studio"
 version = "0.1.0"
-description = "MoFA Studio - Pure Rust UI Application (AI models downloaded on demand)"
+description = "MoFA Studio - Rust UI with Python backends (simplified, no Dora)"
 channels = ["conda-forge"]
 platforms = ["osx-arm64", "osx-64", "linux-64", "win-64"]
 
 # =============================================================================
-# CONDA DEPENDENCIES (from conda-forge and pytorch channels)
+# CONDA DEPENDENCIES
 # =============================================================================
 
 [dependencies]
-# Minimal dependencies for pure Rust version
-# Python only needed for some optional webview apps
+# Python runtime for backend services
 python = "3.12.*"
 
-# System libraries (from conda-forge)
+# System libraries
 portaudio = "*"
 openssl = "*"
+ffmpeg = "*"
 
 # =============================================================================
-# PYPI DEPENDENCIES
+# PYPI DEPENDENCIES (精简版)
 # =============================================================================
 
 [pypi-dependencies]
-# Minimal dependencies for pure version
-# AI/ML models will be downloaded on demand or use cloud APIs
+# HTTP client for API calls
 requests = "*"
+httpx = "*"
+
+# Web framework for Python backends
+fastapi = "*"
+uvicorn = "*"
+
+# Audio processing
+pydub = "*"
+
+# Data handling
+numpy = "<2.0"
+pandas = "*"
+
+# Utilities
+python-dotenv = "*"
+pyyaml = "*"
+
+# Optional: lightweight ASR (can be installed on demand)
+# faster-whisper = "*"  # Commented out - install manually if needed
 
 # =============================================================================
 # ENVIRONMENTS
 # =============================================================================
 
 [environments]
-# Default environment (minimal, for pure Rust version)
 default = { solve-group = "default" }
 
 # =============================================================================
@@ -44,45 +61,25 @@ default = { solve-group = "default" }
 # =============================================================================
 
 [tasks]
-# Full setup task - run after `pixi install`
+# Full setup
 setup = { depends-on = ["build-rust"] }
 
-# Build Rust project only (no Python nodes)
-install-dora-cli = "cargo install dora-cli --locked"
+# Build Rust only (no Dora nodes)
+build-rust = "cargo build --release"
 
-# Build Rust nodes
-build-rust = { depends-on = ["build-maas-client", "build-conference-bridge", "build-conference-controller"] }
-
-build-maas-client = "cargo build --release --manifest-path node-hub/dora-maas-client/Cargo.toml"
-build-conference-bridge = "cargo build --release --manifest-path node-hub/dora-conference-bridge/Cargo.toml"
-build-conference-controller = "cargo build --release --manifest-path node-hub/dora-conference-controller/Cargo.toml"
-
-# Test tasks
-test-deps = "python models/setup-local-models/test_dependencies.py"
-test-tts = "cd models/setup-local-models/kokoro-tts-validation && ./run_all_tests.sh"
-
-# Development tasks
+# Development
 dev = "cargo run --release"
-run = "cargo run --release"  # Alias for launching the app
-dora-up = "dora up"
-dora-stop = "dora destroy"
+run = "cargo run --release"
 
-# Start voice chat dataflow
-start-voice-chat = "dora up && dora start examples/mac-aec-chat/voice-chat-with-aec.yml"
-
-# Clean tasks
-clean-rust = "cargo clean"
-clean = { depends-on = ["clean-rust"] }
+# Clean
+clean = "cargo clean"
 
 # =============================================================================
-# ACTIVATION SCRIPTS
+# ACTIVATION
 # =============================================================================
 
 [activation]
-# Environment variables set when environment is activated
 scripts = ["scripts/activate.sh"]
 
-# Set environment variables
 [activation.env]
 MOFA_STUDIO_ROOT = "$PIXI_PROJECT_ROOT"
-PYTHONPATH = "$PIXI_PROJECT_ROOT/libs/dora-common:$PYTHONPATH"
