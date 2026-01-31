@@ -113,9 +113,13 @@ sign_one() {
     -s "$SIGN_IDENTITY" "$1"
 }
 
+is_macho() {
+  file "$1" | grep -q "Mach-O"
+}
+
 echo "Signing nested Mach-O binaries..."
 while IFS= read -r -d '' f; do
-  if file "$f" | rg -q "Mach-O"; then
+  if is_macho "$f"; then
     sign_one "$f"
   fi
 done < <(find "$APP_BUNDLE" -type f -print0)
