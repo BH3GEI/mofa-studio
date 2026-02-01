@@ -87,7 +87,8 @@ PYTHON_PKG_URL_DEFAULT="https://www.python.org/ftp/python/${PYTHON_VERSION}/pyth
 PYTHON_PKG_URL="${PYTHON_PKG_URL:-$PYTHON_PKG_URL_DEFAULT}"
 
 # 签名身份
-SIGN_IDENTITY="Developer ID Application: Yao Li (SX7GH8L8YB)"
+SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application: Yao Li (SX7GH8L8YB)}"
+SIGN_TIMESTAMP="${SIGN_TIMESTAMP:-1}"
 
 # 公证凭据 (从环境变量或 Keychain 获取)
 APPLE_ID="${APPLE_ID:-li@mofa.ai}"
@@ -134,7 +135,10 @@ export TMPDIR
 # Step 1: 编译 Release
 echo "[1/7] Building release binary..."
 cd "$PROJECT_ROOT"
-cargo build --release -p mofa-studio-shell
+MAKEPAD="${MAKEPAD:-apple_bundle}"
+MAKEPAD_PACKAGE_DIR="${MAKEPAD_PACKAGE_DIR:-.}"
+MAKEPAD="$MAKEPAD" MAKEPAD_PACKAGE_DIR="$MAKEPAD_PACKAGE_DIR" \
+    cargo build --release -p mofa-studio-shell
 
 # Step 2: 创建 .icns 图标
 echo "[2/7] Creating app icon..."
@@ -244,7 +248,75 @@ cp "$PROJECT_ROOT/target/release/mofa-studio" "$APP_BUNDLE/Contents/MacOS/"
 cp "$BUILD_DIR/MofaStudio.icns" "$APP_BUNDLE/Contents/Resources/"
 
 # 复制资源文件 (字体、图标等)
-cp -r "$PROJECT_ROOT/mofa-studio-shell/resources" "$APP_BUNDLE/Contents/Resources/"
+BUNDLE_RESOURCES="$APP_BUNDLE/Contents/Resources"
+if [ "$MAKEPAD_PACKAGE_DIR" = "." ] || [ -z "$MAKEPAD_PACKAGE_DIR" ]; then
+    BUNDLE_DEP_ROOT="$BUNDLE_RESOURCES"
+else
+    BUNDLE_DEP_ROOT="$BUNDLE_RESOURCES/$MAKEPAD_PACKAGE_DIR"
+fi
+mkdir -p "$BUNDLE_DEP_ROOT"
+mkdir -p "$BUNDLE_DEP_ROOT/resources"
+cp -R "$PROJECT_ROOT/mofa-studio-shell/resources/." "$BUNDLE_DEP_ROOT/resources"
+
+copy_crate_resources() {
+    local crate_name="$1"
+    local src_dir="$2"
+    local dest_dir="$BUNDLE_DEP_ROOT/$crate_name/resources"
+    if [ -d "$src_dir" ]; then
+        mkdir -p "$(dirname "$dest_dir")"
+        cp -r "$src_dir" "$dest_dir"
+    fi
+}
+
+# mofa-studio-shell (crate://self/resources/* and crate://mofa_studio_shell/resources/*)
+copy_crate_resources "mofa_studio_shell" "$PROJECT_ROOT/mofa-studio-shell/resources"
+
+# workspace crates
+copy_crate_resources "mofa_ui" "$PROJECT_ROOT/mofa-ui/resources"
+copy_crate_resources "mofa_widgets" "$PROJECT_ROOT/mofa-widgets/resources"
+
+# app crates
+for res_dir in "$PROJECT_ROOT"/apps/*/resources; do
+    [ -d "$res_dir" ] || continue
+    app_name="$(basename "$(dirname "$res_dir")")"
+    app_crate="${app_name//-/_}"
+    copy_crate_resources "$app_crate" "$res_dir"
+done
+
+# makepad-widgets resources (from cargo checkout)
+MAKEPAD_WIDGETS_DIR="$(find "$HOME/.cargo/git/checkouts" -maxdepth 6 -type d \( -path "*/makepad-*/widgets" -o -path "*/makepad-*/?*/widgets" \) 2>/dev/null | head -1)"
+if [ -n "$MAKEPAD_WIDGETS_DIR" ]; then
+    if [ -d "$MAKEPAD_WIDGETS_DIR/resources" ]; then
+        copy_crate_resources "makepad_widgets" "$MAKEPAD_WIDGETS_DIR/resources"
+        # also merge into root resources for crate://self/resources/* fallback paths
+        cp -R "$MAKEPAD_WIDGETS_DIR/resources/." "$BUNDLE_DEP_ROOT/resources" 2>/dev/null || true
+    fi
+    if [ -d "$MAKEPAD_WIDGETS_DIR/fonts" ]; then
+        mkdir -p "$BUNDLE_DEP_ROOT/makepad_widgets"
+        cp -R "$MAKEPAD_WIDGETS_DIR/fonts" "$BUNDLE_DEP_ROOT/makepad_widgets/fonts"
+    fi
+fi
+
+# makepad-fonts-emoji resources (from cargo registry)
+MAKEPAD_EMOJI_RES="$(find "$HOME/.cargo/registry/src" -maxdepth 3 -type d -path "*/makepad-fonts-emoji-*/resources" 2>/dev/null | head -1)"
+if [ -n "$MAKEPAD_EMOJI_RES" ]; then
+    copy_crate_resources "makepad_fonts_emoji" "$MAKEPAD_EMOJI_RES"
+fi
+
+# makepad-fonts-chinese resources (from cargo registry)
+copy_registry_fonts() {
+    local crate_dir="$1"
+    local dest_crate="$2"
+    local res_dir
+    res_dir="$(find "$HOME/.cargo/registry/src" -maxdepth 3 -type d -path "*/${crate_dir}-*/resources" 2>/dev/null | head -1)"
+    if [ -n "$res_dir" ]; then
+        copy_crate_resources "$dest_crate" "$res_dir"
+    fi
+}
+copy_registry_fonts "makepad-fonts-chinese-regular" "makepad_fonts_chinese_regular"
+copy_registry_fonts "makepad-fonts-chinese-regular-2" "makepad_fonts_chinese_regular_2"
+copy_registry_fonts "makepad-fonts-chinese-bold" "makepad_fonts_chinese_bold"
+copy_registry_fonts "makepad-fonts-chinese-bold-2" "makepad_fonts_chinese_bold_2"
 
 # Step 5: 打包Python运行时（简化版）
 echo "[5/7] Bundling Python runtime..."
@@ -408,6 +480,13 @@ if [ -d "$PROJECT_ROOT/apps/mofa-hello-world/python" ]; then
     APPS_COPIED=$((APPS_COPIED + 1))
 fi
 
+# Note Taker
+if [ -d "$PROJECT_ROOT/apps/mofa-note-taker/python" ]; then
+    echo "     - mofa-note-taker"
+    cp -r "$PROJECT_ROOT/apps/mofa-note-taker/python" "$APPS_DIR/mofa-note-taker"
+    APPS_COPIED=$((APPS_COPIED + 1))
+fi
+
 echo "   ✅ Copied $APPS_COPIED Python apps"
 
 # 安装Python依赖
@@ -474,6 +553,46 @@ if missing:
     raise SystemExit("Missing packages in embedded Python: " + ", ".join(missing))
 print("Embedded Python packages OK")
 PY
+
+    # 修正内嵌 Python 的动态库引用（避免指向 Homebrew 路径）
+    if command -v otool >/dev/null 2>&1 && command -v install_name_tool >/dev/null 2>&1; then
+        if [ -f "$PYTHON_FRAMEWORK_DST/Versions/Current/Python" ]; then
+            install_name_tool -id "@rpath/Python" "$PYTHON_FRAMEWORK_DST/Versions/Current/Python" || true
+        fi
+        PYTHON_APP_BIN="$PYTHON_FRAMEWORK_DST/Versions/Current/Resources/Python.app/Contents/MacOS/Python"
+        if [ -x "$PYTHON_APP_BIN" ]; then
+            old_path_app="$(otool -L "$PYTHON_APP_BIN" | awk '/Python.framework\/Versions\/3\.11\/Python/ {print $1; exit}')"
+            if [ -n "$old_path_app" ]; then
+                install_name_tool -change "$old_path_app" "@rpath/Python" "$PYTHON_APP_BIN" || true
+            fi
+            install_name_tool -add_rpath "@loader_path/../../../../" "$PYTHON_APP_BIN" 2>/dev/null || true
+            install_name_tool -delete_rpath "@loader_path/../../../" "$PYTHON_APP_BIN" 2>/dev/null || true
+            install_name_tool -delete_rpath "/opt/homebrew/lib" "$PYTHON_APP_BIN" 2>/dev/null || true
+        fi
+        for bin in "$PYTHON_CURRENT_BIN/python3" "$PYTHON_CURRENT_BIN/python3.11" "$PYTHON_CURRENT_BIN/python3.12"; do
+            [ -x "$bin" ] || continue
+            old_path="$(otool -L "$bin" | awk '/Python.framework\/Versions\/3\.11\/Python/ {print $1; exit}')"
+            if [ -n "$old_path" ]; then
+                install_name_tool -change "$old_path" "@rpath/Python" "$bin" || true
+            fi
+            install_name_tool -add_rpath "@loader_path/.." "$bin" 2>/dev/null || true
+            install_name_tool -delete_rpath "/opt/homebrew/lib" "$bin" 2>/dev/null || true
+        done
+
+        # 重新签名被改写的二进制（避免被 AMFI 杀）
+        if command -v codesign >/dev/null 2>&1; then
+            if [ -f "$PYTHON_FRAMEWORK_DST/Versions/Current/Python" ]; then
+                codesign --force --sign - "$PYTHON_FRAMEWORK_DST/Versions/Current/Python" 2>/dev/null || true
+            fi
+            if [ -x "$PYTHON_APP_BIN" ]; then
+                codesign --force --sign - "$PYTHON_APP_BIN" 2>/dev/null || true
+            fi
+            for bin in "$PYTHON_CURRENT_BIN/python3" "$PYTHON_CURRENT_BIN/python3.11" "$PYTHON_CURRENT_BIN/python3.12"; do
+                [ -x "$bin" ] || continue
+                codesign --force --sign - "$bin" 2>/dev/null || true
+            done
+        fi
+    fi
 else
     echo "   ⚠️ Python binary not found: $PYTHON_BIN"
 fi
@@ -481,7 +600,13 @@ fi
 # Step 6: 代码签名 (可选)
 if $DO_SIGN; then
     echo "[6/7] Code signing..."
+    if [ "$SIGN_TIMESTAMP" = "0" ] || [ "$SIGN_TIMESTAMP" = "none" ]; then
+        SIGN_TIMESTAMP_FLAG="--timestamp=none"
+    else
+        SIGN_TIMESTAMP_FLAG="--timestamp"
+    fi
     codesign --deep --force --options runtime \
+        $SIGN_TIMESTAMP_FLAG \
         --sign "$SIGN_IDENTITY" \
         --entitlements /dev/stdin \
         "$APP_BUNDLE" << ENTITLEMENTS
@@ -501,6 +626,10 @@ ENTITLEMENTS
     echo "   Signed successfully!"
 else
     echo "[6/7] Skipping code signing (use --sign to enable)"
+    # ad-hoc 签名，便于本机运行
+    if command -v codesign >/dev/null 2>&1; then
+        codesign --force --deep --sign - "$APP_BUNDLE" 2>/dev/null || true
+    fi
 fi
 
 # Step 7: 创建 DMG

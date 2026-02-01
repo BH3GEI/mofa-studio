@@ -324,6 +324,13 @@ fn find_embedded_python_cmd() -> Option<String> {
     None
 }
 
+fn is_packaged_app() -> bool {
+    std::env::current_exe()
+        .ok()
+        .and_then(|path| path.to_str().map(|s| s.contains(".app/Contents/MacOS")))
+        .unwrap_or(false)
+}
+
 const AUTH_USERNAME: &str = "mofa_studio";
 const AUTH_PASSWORD: &str = "mofa_studio#9QNpE3m@6B";
 
@@ -341,6 +348,12 @@ fn load_auth_config() -> Option<AuthCredentials> {
 }
 
 fn load_python_config() -> String {
+    if let Some(cmd) = find_embedded_python_cmd() {
+        return cmd;
+    }
+    if is_packaged_app() {
+        return String::new();
+    }
     let config_path = get_config_path();
     if let Ok(content) = fs::read_to_string(&config_path) {
         if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
@@ -348,9 +361,6 @@ fn load_python_config() -> String {
                 return path.to_string();
             }
         }
-    }
-    if let Some(cmd) = find_embedded_python_cmd() {
-        return cmd;
     }
     if std::path::Path::new("/opt/homebrew/bin/python3.11").exists() {
         "/opt/homebrew/bin/python3.11".to_string()
@@ -385,6 +395,12 @@ impl PythonServer {
     fn start(&mut self) -> Result<u16, String> {
         if self.process.is_some() {
             return Ok(self.port);
+        }
+
+        if is_packaged_app()
+            && (self.python_cmd.is_empty() || !std::path::Path::new(&self.python_cmd).exists())
+        {
+            return Err("Embedded Python not found in app bundle".to_string());
         }
 
         let port = find_available_port().ok_or("Failed to find available port")?;
