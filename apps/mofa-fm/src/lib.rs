@@ -1,10 +1,9 @@
 //! MoFA FM App - AI-powered audio streaming and voice interface
 
 pub mod audio_player;
-pub mod dora_integration;
 pub mod screen;
 
-pub use dora_integration::{DoraCommand, DoraEvent, DoraIntegration};
+// TODO: Replace with VoiceChatEngine integration
 // Re-export shared modules from mofa-ui
 pub use mofa_ui::{
     // MofaHero widget

@@ -64,15 +64,6 @@ pub struct DataflowController {
 }
 
 impl DataflowController {
-    fn dora_command() -> Command {
-        if let Ok(path) = std::env::var("MOFA_DORA_BIN") {
-            let trimmed = path.trim();
-            if !trimmed.is_empty() {
-                return Command::new(trimmed);
-            }
-        }
-        Command::new("dora")
-    }
     /// Create a new controller for a dataflow
     pub fn new(dataflow_path: impl AsRef<Path>) -> BridgeResult<Self> {
         let original_path = dataflow_path.as_ref();
@@ -132,25 +123,9 @@ impl DataflowController {
 
     /// Ensure dora daemon is running
     pub fn ensure_daemon(&mut self) -> BridgeResult<()> {
-        let force_restart = std::env::var("MOFA_FORCE_DORA_RESTART")
-            .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
-            .unwrap_or(false)
-            || std::env::var("MOFA_PACKAGED")
-                .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
-                .unwrap_or(false);
-
-        if force_restart {
-            // dora CLI uses `destroy` (not `down`) to stop coordinator/daemon.
-            let _ = Self::dora_command()
-                .arg("destroy")
-                .stdout(Stdio::null())
-                .stderr(Stdio::null())
-                .status();
-        }
-
         // Check if daemon is already running by using `dora list`
         // If it succeeds, daemon is running
-        let status = Self::dora_command()
+        let status = Command::new("dora")
             .arg("list")
             .stdout(Stdio::null())
             .stderr(Stdio::null())
@@ -163,7 +138,7 @@ impl DataflowController {
             }
             _ => {
                 info!("Starting dora daemon...");
-                let child = Self::dora_command()
+                let child = Command::new("dora")
                     .arg("up")
                     .stdout(Stdio::null())
                     .stderr(Stdio::null())
@@ -174,23 +149,8 @@ impl DataflowController {
 
                 self.daemon_process = Some(child);
 
-                // Wait for daemon to be ready (avoid race with dora start)
-                let ready_deadline = Instant::now() + Duration::from_secs(10);
-                loop {
-                    let status = Self::dora_command()
-                        .arg("list")
-                        .stdout(Stdio::null())
-                        .stderr(Stdio::null())
-                        .status();
-                    if matches!(status, Ok(s) if s.success()) {
-                        break;
-                    }
-                    if Instant::now() >= ready_deadline {
-                        warn!("Dora daemon did not become ready within 10s");
-                        break;
-                    }
-                    std::thread::sleep(Duration::from_millis(300));
-                }
+                // Wait for daemon to be ready
+                std::thread::sleep(Duration::from_millis(1000));
                 Ok(())
             }
         }
@@ -228,7 +188,7 @@ impl DataflowController {
             .parent()
             .ok_or_else(|| BridgeError::StartFailed("Invalid dataflow path".to_string()))?;
 
-        let mut cmd = Self::dora_command();
+        let mut cmd = Command::new("dora");
         cmd.arg("start")
             // Use the absolute path so dora always resolves node paths relative to
             // the actual dataflow file location.
@@ -318,7 +278,7 @@ impl DataflowController {
         info!("Stopping dataflow: {} (grace: {})", dataflow_id, grace_str);
 
         // Build dora stop command
-        let mut cmd = Self::dora_command();
+        let mut cmd = Command::new("dora");
         cmd.arg("stop").arg(&dataflow_id);
 
         // Add grace duration if specified
@@ -354,7 +314,7 @@ impl DataflowController {
                 ref started_at,
             } => {
                 // Query dora for node status
-                let output = Self::dora_command()
+                let output = Command::new("dora")
                     .arg("list")
                     .output()
                     .map_err(|e| BridgeError::Unknown(format!("Failed to query status: {}", e)))?;

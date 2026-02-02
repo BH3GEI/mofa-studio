@@ -7,7 +7,7 @@ use makepad_widgets::*;
 use super::{ChatMessageEntry, MoFaDebateScreen};
 
 impl MoFaDebateScreen {
-    /// Send prompt to dora
+    /// Send prompt - TODO: Implement backend integration
     pub(super) fn send_prompt(&mut self, cx: &mut Cx) {
         let input_text = self
             .view
@@ -26,21 +26,7 @@ impl MoFaDebateScreen {
             input_text
         };
 
-        // Initialize dora if needed
-        self.init_dora(cx);
-
-        // If dataflow isn't running, treat this send as a start request and queue the prompt
-        let mut queued = false;
-        if let Some(ref dora) = self.dora_integration {
-            if !dora.is_running() {
-                self.pending_prompts.push(prompt_text.clone());
-                queued = true;
-                // handle_mofa_start consumes the input as kickoff topic (or fills placeholder)
-                self.handle_mofa_start(cx);
-            }
-        }
-
-        // Add user message to chat (after potential start which clears chat)
+        // Add user message to chat
         let user_msg = ChatMessageEntry::new("You", prompt_text.clone());
         self.chat_messages.push(user_msg);
         // Keep chat messages bounded (prevents O(n²) slowdown and markdown overflow)
@@ -60,52 +46,35 @@ impl MoFaDebateScreen {
             ))
             .set_text(cx, "");
 
-        // Send through dora if connected
-        if let Some(ref dora) = self.dora_integration {
-            if dora.is_running() {
-                dora.send_prompt(&prompt_text);
-                self.add_log(
-                    cx,
-                    &format!(
-                        "[INFO] [App] Sent prompt: {}",
-                        if prompt_text.len() > 50 {
-                            format!("{}...", &prompt_text[..50])
-                        } else {
-                            prompt_text.to_string()
-                        }
-                    ),
-                );
-            } else {
-                if queued {
-                    self.add_log(cx, "[INFO] [App] Dataflow starting - prompt已排队");
+        // TODO: Implement backend prompt sending
+        self.add_log(
+            cx,
+            &format!(
+                "[INFO] [App] Prompt ready to send: {}",
+                if prompt_text.len() > 50 {
+                    format!("{}...", &prompt_text[..50])
                 } else {
-                    self.add_log(
-                        cx,
-                        "[WARN] [App] Dataflow not running - prompt not sent to LLM",
-                    );
+                    prompt_text.to_string()
                 }
-            }
-        }
+            ),
+        );
+        self.add_log(
+            cx,
+            "[INFO] [App] Backend integration pending - prompt queued locally",
+        );
 
         self.view.redraw(cx);
     }
 
-    /// Reset conversation - sends reset to conference controller
+    /// Reset conversation - TODO: Implement backend reset
     pub(super) fn reset_conversation(&mut self, cx: &mut Cx) {
-        ::log::info!("Reset clicked");
+        ::log::info!("Reset clicked - TODO: Implement backend reset");
 
-        // Send reset command to conference controller via dora
-        if let Some(ref dora) = self.dora_integration {
-            if dora.is_running() {
-                dora.send_control("reset");
-                self.add_log(
-                    cx,
-                    "[INFO] [App] Sent reset command to conference controller",
-                );
-            } else {
-                self.add_log(cx, "[WARN] [App] Dataflow not running - reset not sent");
-            }
-        }
+        // TODO: Implement backend reset command
+        self.add_log(
+            cx,
+            "[INFO] [App] Reset requested - backend integration pending",
+        );
 
         // Clear chat messages
         self.chat_messages.clear();

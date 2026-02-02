@@ -5,27 +5,19 @@
 //! - `audio_controls.rs` - Audio device selection, mic monitoring
 //! - `chat_panel.rs` - Chat display, prompt input
 //! - `log_panel.rs` - Log display, filtering
-//! - `dora_handlers.rs` - Dora event handling, dataflow control
 
 mod audio_controls;
 mod chat_panel;
 pub mod design; // Public for Makepad live_design path resolution
-mod dora_handlers;
 mod log_panel;
 
-use crate::dora_integration::{DoraCommand, DoraIntegration};
 use makepad_widgets::*;
 use mofa_ui::{
+    log_bridge, AecButtonWidgetExt, AudioManager, LedMeterWidgetExt, MicButtonWidgetExt,
     MofaHeroAction, MofaHeroWidgetExt,
-    MicButtonWidgetExt,
-    AecButtonWidgetExt,
-    LedMeterWidgetExt,
-    AudioManager,
-    log_bridge,
 };
 use mofa_widgets::participant_panel::ParticipantPanelWidgetExt;
 use mofa_widgets::{StateChangeListener, TimerControl};
-use std::path::PathBuf;
 
 /// Register live design for this module
 pub fn live_design(cx: &mut Cx) {
@@ -101,13 +93,11 @@ pub struct MoFaDebateScreen {
     #[rust]
     mic_muted: bool,
 
-    // Dora integration
+    // TODO: Backend integration removed - to be reimplemented
+    // This is a placeholder for future backend state
     #[rust]
-    dora_integration: Option<DoraIntegration>,
-    #[rust]
-    dataflow_path: Option<PathBuf>,
-    #[rust]
-    dora_timer: Timer,
+    backend_initialized: bool,
+
     // NextFrame-based animation for copy buttons (smooth fade instead of timer reset)
     #[rust]
     copy_chat_flash_active: bool,
@@ -128,14 +118,6 @@ pub struct MoFaDebateScreen {
     // Participant audio levels for decay animation (matches conference-dashboard)
     #[rust]
     participant_levels: [f64; 3], // 0=student1, 1=student2, 2=tutor
-
-    // SharedDoraState tracking (for detecting changes)
-    #[rust]
-    connected_bridges: Vec<String>,
-    #[rust]
-    processed_dora_log_count: usize,
-    #[rust]
-    pending_prompts: Vec<String>,
 }
 
 impl Widget for MoFaDebateScreen {
@@ -150,24 +132,11 @@ impl Widget for MoFaDebateScreen {
             self.audio_initialized = true;
         }
 
-        // Handle audio timer for mic level updates, log polling, and buffer status
+        // Handle audio timer for mic level updates and log polling
         if self.audio_timer.is_event(event).is_some() {
             self.update_mic_level(cx);
             // Poll Rust logs (50ms interval is fine for log updates)
             self.poll_rust_logs(cx);
-            // Send actual buffer fill percentage to dora for backpressure control
-            // This replaces the bridge's estimation with the real value from AudioPlayer
-            if let Some(ref player) = self.audio_player {
-                let fill_percentage = player.buffer_fill_percentage();
-                if let Some(ref dora) = self.dora_integration {
-                    dora.send_command(DoraCommand::UpdateBufferStatus { fill_percentage });
-                }
-            }
-        }
-
-        // Handle dora timer for polling dora events
-        if self.dora_timer.is_event(event).is_some() {
-            self.poll_dora_events(cx);
         }
 
         // Handle NextFrame for smooth copy button fade animation
@@ -272,8 +241,6 @@ impl Widget for MoFaDebateScreen {
             }
         }
 
-        // Handle mic and AEC button actions (using shared mofa-ui widgets)
-
         // Handle splitter drag
         let splitter = self.view.view(ids!(splitter));
         match event.hits(cx, splitter.area()) {
@@ -313,14 +280,18 @@ impl Widget for MoFaDebateScreen {
         }
 
         // Handle mic button click (using shared MicButton widget)
-        let mic_btn = self.view.mic_button(ids!(audio_container.mic_container.mic_group.mic_mute_btn));
+        let mic_btn = self
+            .view
+            .mic_button(ids!(audio_container.mic_container.mic_group.mic_mute_btn));
         if mic_btn.clicked(actions) {
             self.mic_muted = !self.mic_muted;
             mic_btn.set_muted(cx, self.mic_muted);
         }
 
         // Handle AEC button click (using shared AecButton widget)
-        let aec_btn = self.view.aec_button(ids!(audio_container.aec_container.aec_group.aec_toggle_btn));
+        let aec_btn = self
+            .view
+            .aec_button(ids!(audio_container.aec_container.aec_group.aec_toggle_btn));
         if aec_btn.clicked(actions) {
             self.aec_enabled = !self.aec_enabled;
             aec_btn.set_enabled(cx, self.aec_enabled);
@@ -573,23 +544,21 @@ impl MoFaDebateScreenRef {
 }
 
 impl TimerControl for MoFaDebateScreenRef {
-    /// Stop audio and dora timers - call this before hiding/removing the widget
+    /// Stop audio timer - call this before hiding/removing the widget
     /// to prevent timer callbacks on inactive state
     /// Note: AEC blink animation is shader-driven and doesn't need stopping
     fn stop_timers(&self, cx: &mut Cx) {
         if let Some(inner) = self.borrow_mut() {
             cx.stop_timer(inner.audio_timer);
-            cx.stop_timer(inner.dora_timer);
             ::log::debug!("MoFaDebateScreen timers stopped");
         }
     }
 
-    /// Restart audio and dora timers - call this when the widget becomes visible again
+    /// Restart audio timer - call this when the widget becomes visible again
     /// Note: AEC blink animation is shader-driven and auto-resumes
     fn start_timers(&self, cx: &mut Cx) {
         if let Some(mut inner) = self.borrow_mut() {
             inner.audio_timer = cx.start_interval(0.05); // 50ms for mic level
-            inner.dora_timer = cx.start_interval(0.1); // 100ms for dora events
             ::log::debug!("MoFaDebateScreen timers started");
         }
     }
@@ -708,17 +677,35 @@ impl StateChangeListener for MoFaDebateScreenRef {
             // Apply dark mode to mic button (using shared MicButton widget)
             inner
                 .view
-                .mic_button(ids!(left_column.audio_container.mic_container.mic_group.mic_mute_btn))
+                .mic_button(ids!(
+                    left_column
+                        .audio_container
+                        .mic_container
+                        .mic_group
+                        .mic_mute_btn
+                ))
                 .apply_dark_mode(cx, dark_mode);
 
             // Apply dark mode to LED meters (using shared LedMeter widget)
             inner
                 .view
-                .led_meter(ids!(left_column.audio_container.mic_container.mic_group.mic_level_meter))
+                .led_meter(ids!(
+                    left_column
+                        .audio_container
+                        .mic_container
+                        .mic_group
+                        .mic_level_meter
+                ))
                 .apply_dark_mode(cx, dark_mode);
             inner
                 .view
-                .led_meter(ids!(left_column.audio_container.buffer_container.buffer_group.buffer_meter))
+                .led_meter(ids!(
+                    left_column
+                        .audio_container
+                        .buffer_container
+                        .buffer_group
+                        .buffer_meter
+                ))
                 .apply_dark_mode(cx, dark_mode);
             inner
                 .view
@@ -947,5 +934,38 @@ impl StateChangeListener for MoFaDebateScreenRef {
 
             inner.view.redraw(cx);
         }
+    }
+}
+
+// Backend handler methods - TODO: Implement backend integration
+impl MoFaDebateScreen {
+    /// Handle MoFA start button click
+    /// TODO: Implement backend start logic
+    pub(super) fn handle_mofa_start(&mut self, cx: &mut Cx) {
+        ::log::info!("MoFA Start clicked - TODO: Implement backend start");
+        self.add_log(
+            cx,
+            "[INFO] [App] Start button clicked - backend integration pending",
+        );
+
+        // Update UI state - show connecting
+        self.view
+            .mofa_hero(ids!(left_column.mofa_hero))
+            .set_running(cx, true);
+    }
+
+    /// Handle MoFA stop button click
+    /// TODO: Implement backend stop logic
+    pub(super) fn handle_mofa_stop(&mut self, cx: &mut Cx) {
+        ::log::info!("MoFA Stop clicked - TODO: Implement backend stop");
+        self.add_log(
+            cx,
+            "[INFO] [App] Stop button clicked - backend integration pending",
+        );
+
+        // Update UI state
+        self.view
+            .mofa_hero(ids!(left_column.mofa_hero))
+            .set_running(cx, false);
     }
 }

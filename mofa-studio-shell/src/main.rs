@@ -16,7 +16,6 @@ mod cli;
 pub use cli::Args;
 
 use clap::Parser;
-use std::path::Path;
 
 fn main() {
     // Parse command-line arguments
@@ -30,17 +29,6 @@ fn main() {
 
     log::info!("Starting MoFA Studio");
     log::debug!("CLI args: {:?}", args);
-
-    if let Ok(dir) = std::env::var("MOFA_STUDIO_DIR") {
-        let path = Path::new(&dir);
-        if path.exists() {
-            if let Err(err) = std::env::set_current_dir(path) {
-                log::warn!("Failed to set current dir to {}: {}", dir, err);
-            } else {
-                log::info!("Working directory set to {}", dir);
-            }
-        }
-    }
 
     if args.dark_mode {
         log::info!("Dark mode enabled via CLI");

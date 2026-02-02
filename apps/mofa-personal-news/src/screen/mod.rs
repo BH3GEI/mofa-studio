@@ -432,27 +432,20 @@ fn find_embedded_python_cmd() -> Option<String> {
     None
 }
 
-fn env_python_override() -> Option<String> {
-    if let Ok(cmd) = std::env::var("MOFA_PYTHON") {
-        if !cmd.trim().is_empty() {
-            return Some(cmd);
-        }
-    }
-    None
+fn is_packaged_app() -> bool {
+    std::env::current_exe()
+        .ok()
+        .and_then(|path| path.to_str().map(|s| s.contains(".app/Contents/MacOS")))
+        .unwrap_or(false)
 }
 
 /// Load Python path from config
 fn load_python_config() -> String {
-    if let Some(cmd) = env_python_override() {
+    if let Some(cmd) = find_embedded_python_cmd() {
         return cmd;
     }
-    let packaged = std::env::var("MOFA_PACKAGED")
-        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
-        .unwrap_or(false);
-    if packaged {
-        if let Some(cmd) = find_embedded_python_cmd() {
-            return cmd;
-        }
+    if is_packaged_app() {
+        return String::new();
     }
     let config_path = get_config_path();
     if let Ok(content) = fs::read_to_string(&config_path) {
@@ -461,9 +454,6 @@ fn load_python_config() -> String {
                 return path.to_string();
             }
         }
-    }
-    if let Some(cmd) = find_embedded_python_cmd() {
-        return cmd;
     }
     // Default: try homebrew first
     if std::path::Path::new("/opt/homebrew/bin/python3.11").exists() {
@@ -477,6 +467,9 @@ fn load_python_config() -> String {
 
 /// Save Python path to config
 fn save_python_config(python_path: &str) -> Result<(), String> {
+    if is_packaged_app() {
+        return Err("Packaged app uses embedded Python only".to_string());
+    }
     let config_path = get_config_path();
 
     // Create directory if needed
@@ -524,6 +517,12 @@ impl PythonServer {
     fn start(&mut self) -> Result<u16, String> {
         if self.process.is_some() {
             return Ok(self.port);
+        }
+
+        if is_packaged_app()
+            && (self.python_cmd.is_empty() || !std::path::Path::new(&self.python_cmd).exists())
+        {
+            return Err("Embedded Python not found in app bundle".to_string());
         }
 
         // Find available port

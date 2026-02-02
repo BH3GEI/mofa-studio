@@ -5,87 +5,20 @@
 use regex::Regex;
 use serde::Deserialize;
 use std::path::PathBuf;
-use std::path::Path;
 
 /// Available PrimeSpeech voices
 pub const VOICE_OPTIONS: &[&str] = &[
-    "Zhao Daniu", "Chen Yifan", "Luo Xiang", "Doubao", "Yang Mi",
-    "Ma Yun", "Maple", "Cove", "Ellen", "Juniper",
+    "Zhao Daniu",
+    "Chen Yifan",
+    "Luo Xiang",
+    "Doubao",
+    "Yang Mi",
+    "Ma Yun",
+    "Maple",
+    "Cove",
+    "Ellen",
+    "Juniper",
 ];
-
-fn env_path(var: &str) -> Option<PathBuf> {
-    std::env::var(var).ok().map(PathBuf::from).and_then(|p| {
-        if p.exists() {
-            Some(p)
-        } else {
-            None
-        }
-    })
-}
-
-fn dataflow_file_name() -> String {
-    if let Ok(name) = std::env::var("MOFA_DATAFLOW_FILE") {
-        if !name.trim().is_empty() {
-            return name;
-        }
-    }
-    match std::env::var("MOFA_PACKAGED") {
-        Ok(flag) if flag == "1" || flag.eq_ignore_ascii_case("true") => {
-            "voice-chat.packaged.yml".to_string()
-        }
-        _ => "voice-chat.yml".to_string(),
-    }
-}
-
-pub fn dataflow_dir_from_env(app: &str) -> Option<PathBuf> {
-    if let Some(dir) = env_path("MOFA_DATAFLOW_DIR") {
-        return Some(dir);
-    }
-    if let Some(root) = env_path("MOFA_STUDIO_DIR") {
-        let dir = root.join("apps").join(app).join("dataflow");
-        if dir.exists() {
-            return Some(dir);
-        }
-    }
-    None
-}
-
-fn dataflow_dir_from_cwd(app: &str) -> Option<PathBuf> {
-    let cwd = std::env::current_dir().ok()?;
-
-    let app_path = cwd.join("apps").join(app).join("dataflow");
-    if app_path.exists() {
-        return Some(app_path);
-    }
-
-    let local_path = cwd.join("dataflow");
-    if local_path.exists() {
-        return Some(local_path);
-    }
-
-    None
-}
-
-fn yaml_path_in_dir(dir: &Path) -> Option<PathBuf> {
-    if std::env::var("MOFA_DATAFLOW_FILE").is_err() {
-        let packaged = dir.join("voice-chat.packaged.yml");
-        if packaged.exists() {
-            return Some(packaged);
-        }
-    }
-    let name = dataflow_file_name();
-    let path = dir.join(&name);
-    if path.exists() {
-        return Some(path);
-    }
-    if name != "voice-chat.yml" {
-        let fallback = dir.join("voice-chat.yml");
-        if fallback.exists() {
-            return Some(fallback);
-        }
-    }
-    None
-}
 
 /// Role configuration loaded from TOML file
 #[derive(Debug, Clone, Default)]
@@ -128,10 +61,11 @@ impl RoleConfig {
         let content = std::fs::read_to_string(path)
             .map_err(|e| format!("Failed to read config file: {}", e))?;
 
-        let config: TomlConfig = toml::from_str(&content)
-            .map_err(|e| format!("Failed to parse config file: {}", e))?;
+        let config: TomlConfig =
+            toml::from_str(&content).map_err(|e| format!("Failed to parse config file: {}", e))?;
 
-        let models = config.models
+        let models = config
+            .models
             .map(|m| m.into_iter().map(|model| model.id).collect())
             .unwrap_or_default();
 
@@ -147,7 +81,9 @@ impl RoleConfig {
     /// Save model, system prompt, and voice back to the TOML file
     /// Uses regex-based replacement to preserve file formatting and comments
     pub fn save(&self) -> Result<(), String> {
-        let path = self.config_path.as_ref()
+        let path = self
+            .config_path
+            .as_ref()
             .ok_or_else(|| "No config path set".to_string())?;
 
         let content = std::fs::read_to_string(path)
@@ -156,7 +92,10 @@ impl RoleConfig {
         // Update default_model using regex (single-line value)
         let model_re = Regex::new(r#"(?m)^default_model\s*=\s*"[^"]*""#)
             .map_err(|e| format!("Invalid regex: {}", e))?;
-        let content = model_re.replace(&content, format!(r#"default_model = "{}""#, self.default_model));
+        let content = model_re.replace(
+            &content,
+            format!(r#"default_model = "{}""#, self.default_model),
+        );
 
         // Update voice using regex (single-line value)
         let voice_re = Regex::new(r#"(?m)^voice\s*=\s*"[^"]*""#)
@@ -167,7 +106,10 @@ impl RoleConfig {
         // Match: system_prompt = """...""" (with newlines inside)
         let prompt_re = Regex::new(r#"(?ms)^system_prompt\s*=\s*""".*?""""#)
             .map_err(|e| format!("Invalid regex: {}", e))?;
-        let content = prompt_re.replace(&content, format!(r#"system_prompt = """{}""""#, self.system_prompt));
+        let content = prompt_re.replace(
+            &content,
+            format!(r#"system_prompt = """{}""""#, self.system_prompt),
+        );
 
         std::fs::write(path, content.as_ref())
             .map_err(|e| format!("Failed to write config file: {}", e))?;
@@ -216,8 +158,7 @@ pub fn update_yaml_voice(yaml_path: &PathBuf, role: &str, voice: &str) -> Result
 
     // Find the node section boundaries
     let node_pattern = format!(r"(?m)^  - id: {}\s*$", regex::escape(node_id));
-    let node_re = Regex::new(&node_pattern)
-        .map_err(|e| format!("Invalid regex: {}", e))?;
+    let node_re = Regex::new(&node_pattern).map_err(|e| format!("Invalid regex: {}", e))?;
 
     let node_match = match node_re.find(&content) {
         Some(m) => m,
@@ -227,10 +168,10 @@ pub fn update_yaml_voice(yaml_path: &PathBuf, role: &str, voice: &str) -> Result
     let node_start = node_match.start();
 
     // Find the end of this node (next "  - id:" or end of file)
-    let next_node_re = Regex::new(r"(?m)^  - id: ")
-        .map_err(|e| format!("Invalid regex: {}", e))?;
+    let next_node_re = Regex::new(r"(?m)^  - id: ").map_err(|e| format!("Invalid regex: {}", e))?;
 
-    let node_end = next_node_re.find_iter(&content[node_match.end()..])
+    let node_end = next_node_re
+        .find_iter(&content[node_match.end()..])
         .next()
         .map(|m| node_match.end() + m.start())
         .unwrap_or(content.len());
@@ -288,7 +229,8 @@ pub fn read_yaml_voice(yaml_path: &PathBuf, role: &str) -> Option<String> {
 
     // Find the end of this node (next "  - id:" or end of file)
     let next_node_re = Regex::new(r"(?m)^  - id: ").ok()?;
-    let node_end = next_node_re.find_iter(&content[node_match.end()..])
+    let node_end = next_node_re
+        .find_iter(&content[node_match.end()..])
         .next()
         .map(|m| node_match.end() + m.start())
         .unwrap_or(content.len());
@@ -313,16 +255,23 @@ pub fn get_yaml_path(dataflow_path: Option<&PathBuf>) -> Option<PathBuf> {
         }
     }
 
-    if let Some(dir) = dataflow_dir_from_env("mofa-fm") {
-        if let Some(path) = yaml_path_in_dir(&dir) {
-            return Some(path);
-        }
+    // Fallback: search common locations
+    let cwd = std::env::current_dir().ok()?;
+
+    // First try: apps/mofa-fm/dataflow/voice-chat.yml (workspace root)
+    let app_path = cwd
+        .join("apps")
+        .join("mofa-fm")
+        .join("dataflow")
+        .join("voice-chat.yml");
+    if app_path.exists() {
+        return Some(app_path);
     }
 
-    if let Some(dir) = dataflow_dir_from_cwd("mofa-fm") {
-        if let Some(path) = yaml_path_in_dir(&dir) {
-            return Some(path);
-        }
+    // Second try: dataflow/voice-chat.yml (run from app directory)
+    let local_path = cwd.join("dataflow").join("voice-chat.yml");
+    if local_path.exists() {
+        return Some(local_path);
     }
 
     None
@@ -347,13 +296,25 @@ pub fn get_role_config_path(dataflow_path: Option<&PathBuf>, role: &str) -> Path
         }
     }
 
-    if let Some(dir) = dataflow_dir_from_env("mofa-fm").or_else(|| dataflow_dir_from_cwd("mofa-fm")) {
-        let config_path = dir.join(config_name);
-        if config_path.exists() {
-            return config_path;
-        }
-        return config_path;
+    // Fallback: search common locations
+    let cwd = std::env::current_dir().unwrap_or_default();
+
+    // First try: apps/mofa-fm/dataflow/ (workspace root)
+    let app_path = cwd
+        .join("apps")
+        .join("mofa-fm")
+        .join("dataflow")
+        .join(config_name);
+    if app_path.exists() {
+        return app_path;
     }
 
-    PathBuf::from(config_name)
+    // Second try: dataflow/ (run from app directory)
+    let local_path = cwd.join("dataflow").join(config_name);
+    if local_path.exists() {
+        return local_path;
+    }
+
+    // Default
+    app_path
 }

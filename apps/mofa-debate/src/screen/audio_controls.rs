@@ -4,7 +4,7 @@
 
 use makepad_widgets::*;
 use mofa_settings::data::Preferences;
-use mofa_ui::{LedMeterWidgetExt, LedColors};
+use mofa_ui::{LedColors, LedMeterWidgetExt};
 
 use super::MoFaDebateScreen;
 
@@ -106,8 +106,8 @@ impl MoFaDebateScreen {
         // Start timer for mic level updates (50ms for smooth visualization)
         self.audio_timer = cx.start_interval(0.05);
 
-        // Start dora timer for participant panel updates (needed for audio visualization)
-        self.dora_timer = cx.start_interval(0.1);
+        // TODO: Backend timer removed - to be reimplemented when backend integration is added
+        // self.backend_timer = cx.start_interval(0.1);
 
         // AEC enabled by default (blink animation is shader-driven, no timer needed)
         self.aec_enabled = true;
@@ -143,7 +143,9 @@ impl MoFaDebateScreen {
 
         // Use the shared LedMeter widget with set_level API
         self.view
-            .led_meter(ids!(audio_container.mic_container.mic_group.mic_level_meter))
+            .led_meter(ids!(
+                audio_container.mic_container.mic_group.mic_level_meter
+            ))
             .set_level(cx, scaled_level);
     }
 
@@ -159,7 +161,9 @@ impl MoFaDebateScreen {
         };
 
         // Use the shared LedMeter widget with set_level API
-        let meter = self.view.led_meter(ids!(audio_container.buffer_container.buffer_group.buffer_meter));
+        let meter = self.view.led_meter(ids!(
+            audio_container.buffer_container.buffer_group.buffer_meter
+        ));
         meter.set_colors(colors);
         meter.set_level(cx, level as f32);
 
