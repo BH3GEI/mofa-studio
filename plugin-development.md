@@ -10,6 +10,46 @@ This guide explains how to create plugins for MoFA Studio. The system supports t
 
 This guide focuses on WebView plugins, which are easier to develop and don't require recompiling the main application. If you need the same WebView pattern but with a Rust backend, see "Rust Backend (Embedded App)" below.
 
+## Development Journey
+
+When developing your first plugin, choose the appropriate path based on your requirements:
+
+### Path Selection
+
+| Requirement | Recommended Solution | Modify Main Code | Tech Stack |
+|-------------|---------------------|------------------|------------|
+| Rapid development, no recompilation | WebView Plugin | No | Python + HTML/JS |
+| Use React/Vue frontend frameworks | WebView Plugin | No | Python + React/Vue |
+| Need Rust backend instead of Python | Native Rust App | Yes | Rust + WebView |
+| Need native Makepad UI components | Native Rust App | Yes | Rust + Makepad |
+| Deep shell integration (e.g., sidebar control) | Native Rust App | Yes | Rust |
+
+### Common Misconceptions
+
+**Misconception: Every plugin requires modifying the main code**
+
+Correction: Only native Rust Apps require modifying main code and recompilation. WebView plugins are completely independent of the main repository. Just create a directory in `~/.mofa-studio/plugins/`.
+
+**Misconception: Plugins must be placed in the main repository**
+
+Correction: WebView plugins reside in the user directory at `~/.mofa-studio/plugins/` and can be distributed independently. Only native Rust Apps need to be placed in the `apps/` directory of the main repository.
+
+**Misconception: Plugin development requires Rust knowledge**
+
+Correction: WebView plugins only require Python and frontend technologies (HTML/CSS/JS). Rust is only needed for developing native Rust Apps.
+
+### Recommended Workflow
+
+First-time developers should start with WebView plugins:
+
+1. Create plugin directory: `mkdir -p ~/.mofa-studio/plugins/my-plugin/{python,static}`
+2. Write `manifest.json` (configuration file)
+3. Write `python/app.py` (backend API)
+4. Write `static/index.html` (frontend interface)
+5. Restart MoFA Studio to test
+
+Consider migrating to a native Rust App only if you need higher performance or native UI capabilities.
+
 ## Integration Modes (Summary)
 
 **App vs Plugin**

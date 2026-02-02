@@ -4,6 +4,46 @@
 - 内建 Rust App（需重编译）：可做原生 Makepad UI，亦可走 WebView + Rust HTTP。
 - 外挂 WebView（无需重编译）：后端为 Python HTTP，前端为 HTML/JS（可由 React/Vue 构建后落地）。
 
+## 开发旅程
+
+首次开发插件时，根据需求选择合适的路径：
+
+### 路径选择
+
+| 需求 | 推荐方案 | 是否需要修改主代码 | 技术栈 |
+|------|---------|------------------|--------|
+| 快速开发，无需重编译主程序 | 外挂 WebView 插件 | 否 | Python + HTML/JS |
+| 使用 React/Vue 等前端框架 | 外挂 WebView 插件 | 否 | Python + React/Vue |
+| 需要 Rust 后端而非 Python | 内建 Rust App | 是 | Rust + WebView |
+| 需要原生 Makepad UI 组件 | 内建 Rust App | 是 | Rust + Makepad |
+| 深度集成壳层功能（如侧边栏控制） | 内建 Rust App | 是 | Rust |
+
+### 常见误区
+
+**误区：每次写插件都要修改主代码**
+
+正解：只有内建 Rust App 需要修改主代码并重编译。外挂 WebView 插件完全独立于主仓库，只需在 `~/.mofa-studio/plugins/` 下创建目录即可。
+
+**误区：插件必须放在主仓库里**
+
+正解：外挂 WebView 插件放在用户目录 `~/.mofa-studio/plugins/`，可独立分发。如果有需求，也可以提交到主仓库。内建 Rust App 才必须放在主仓库的 `apps/` 目录下。
+
+**误区：开发插件必须懂 Rust**
+
+正解：外挂 WebView 插件只需 Python 和前端技术（HTML/CSS/JS）。只有开发内建 Rust App 才需要 Rust。
+
+### 推荐工作流
+
+首次开发建议从外挂 WebView 插件开始：
+
+1. 创建插件目录：`mkdir -p ~/.mofa-studio/plugins/my-plugin/{python,static}`
+2. 编写 `manifest.json`（配置文件）
+3. 编写 `python/app.py`（后端 API）
+4. 编写 `static/index.html`（前端界面）
+5. 重启 MoFA Studio 测试
+
+如需更高性能或原生 UI，再考虑迁移为内建 Rust App。
+
 ## 模式总览
 
 **App 与插件**
