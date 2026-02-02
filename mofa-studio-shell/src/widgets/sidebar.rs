@@ -304,6 +304,13 @@ live_design! {
                 }
             }
 
+            converter_tab = <SidebarMenuButton> {
+                text: "内容转换器"
+                draw_icon: {
+                    svg_file: dep("crate://self/resources/icons/start.svg")
+                }
+            }
+
             // Apps container - height Fit so it adapts to content
             apps_wrapper = <View> {
                 width: Fill, height: Fit
@@ -399,6 +406,7 @@ pub enum SidebarSelection {
     HelloWorld,
     HelloWorldRust,
     WebViewPlaceholder,
+    Converter,
     App(usize),     // 1-20
     Plugin(String), // Plugin ID
     Settings,
@@ -658,6 +666,15 @@ impl Widget for Sidebar {
             self.handle_selection(cx, SidebarSelection::WebViewPlaceholder);
         }
 
+        // Handle Converter tab click
+        if self
+            .view
+            .button(ids!(main_content.converter_tab))
+            .clicked(actions)
+        {
+            self.handle_selection(cx, SidebarSelection::Converter);
+        }
+
         // Handle Settings tab click
         if self.view.button(ids!(settings_tab)).clicked(actions) {
             self.handle_selection(cx, SidebarSelection::Settings);
@@ -862,6 +879,15 @@ impl Sidebar {
                     .button(ids!(main_content.apps_wrapper.apps_scroll.pinned_app_btn))
                     .set_visible(cx, false);
             }
+            SidebarSelection::Converter => {
+                self.view
+                    .button(ids!(main_content.converter_tab))
+                    .apply_over(cx, live! { draw_bg: { selected: 1.0 } });
+                self.pinned_app_name = None;
+                self.view
+                    .button(ids!(main_content.apps_wrapper.apps_scroll.pinned_app_btn))
+                    .set_visible(cx, false);
+            }
             SidebarSelection::App(app_idx) => {
                 self.set_app_button_selected(cx, *app_idx, true);
 
@@ -932,7 +958,7 @@ impl Sidebar {
             };
         }
 
-        // Clear MoFA FM, Debate, WebView Demo, Personal News, Transcriber, Podcast, Podcast Factory, Note Taker, Hello World, Settings, and pinned app
+        // Clear MoFA FM, Debate, WebView Demo, Personal News, Transcriber, Podcast, Podcast Factory, Note Taker, Hello World, Converter, Settings, and pinned app
         clear_selection!(
             self,
             cx,
@@ -948,6 +974,7 @@ impl Sidebar {
             ids!(main_content.hello_world_tab),
             ids!(main_content.hello_world_rust_tab),
             ids!(main_content.webview_placeholder_tab),
+            ids!(main_content.converter_tab),
             ids!(settings_tab),
             ids!(main_content.apps_wrapper.apps_scroll.pinned_app_btn)
         );
@@ -1424,6 +1451,12 @@ impl SidebarRef {
                         inner
                             .view
                             .button(ids!(main_content.webview_placeholder_tab))
+                            .apply_over(cx, live! { draw_bg: { selected: 1.0 } });
+                    }
+                    SidebarSelection::Converter => {
+                        inner
+                            .view
+                            .button(ids!(main_content.converter_tab))
                             .apply_over(cx, live! { draw_bg: { selected: 1.0 } });
                     }
                     SidebarSelection::App(app_idx) => {

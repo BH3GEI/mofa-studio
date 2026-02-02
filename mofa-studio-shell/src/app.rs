@@ -58,6 +58,8 @@ use mofa_hello_world_rust::MoFaHelloWorldRustApp;
 use mofa_hello_world_rust::screen::HelloWorldRustScreenWidgetRefExt;
 use mofa_webview_placeholder::MoFaWebViewPlaceholderApp;
 use mofa_webview_placeholder::screen::WebViewPlaceholderScreenWidgetRefExt;
+use mofa_converter::MoFaConverterApp;
+use mofa_converter::screen::ConverterScreenWidgetRefExt;
 use mofa_settings::data::Preferences;
 use mofa_settings::screen::SettingsScreenWidgetRefExt;
 
@@ -428,6 +430,7 @@ impl LiveHook for App {
         self.app_registry.register(MoFaHelloWorldApp::info());
         self.app_registry.register(MoFaHelloWorldRustApp::info());
         self.app_registry.register(MoFaWebViewPlaceholderApp::info());
+        self.app_registry.register(MoFaConverterApp::info());
 
         // Initialize page router (defaults to MoFA FM)
         self.page_router = PageRouter::new();
@@ -518,6 +521,7 @@ impl LiveRegister for App {
         <MoFaHelloWorldApp as MofaApp>::live_design(cx);
         <MoFaHelloWorldRustApp as MofaApp>::live_design(cx);
         <MoFaWebViewPlaceholderApp as MofaApp>::live_design(cx);
+        <MoFaConverterApp as MofaApp>::live_design(cx);
 
         // Shell widgets (order matters - tabs before dashboard, apps before dashboard)
         mofa_studio_shell::widgets::sidebar::live_design(cx);
@@ -908,6 +912,12 @@ impl App {
                 .set_active(cx, false);
         }
 
+        // Deactivate WebView when leaving Converter page
+        if old_page == Some(PageId::Converter) {
+            self.ui.web_view_container(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.converter_page.content.webview_area.webview_wrapper.webview))
+                .set_active(cx, false);
+        }
+
         // Deactivate Plugin WebView when leaving Plugin page
         if old_page == Some(PageId::Plugin) {
             self.ui.plugin_screen(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.plugin_page))
@@ -995,6 +1005,14 @@ impl App {
                 .start_server(cx);
         }
 
+        // Activate WebView when entering Converter page
+        if page == PageId::Converter {
+            self.ui.web_view_container(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.converter_page.content.webview_area.webview_wrapper.webview))
+                .set_active(cx, true);
+            self.ui.converter_screen(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.converter_page))
+                .start_server(cx);
+        }
+
         // Activate PluginScreen WebView when entering Plugin page
         if page == PageId::Plugin {
             self.ui.plugin_screen(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.plugin_page))
@@ -1037,6 +1055,8 @@ impl App {
             .apply_over(cx, live!{ visible: (current == Some(PageId::HelloWorldRust)) });
         self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.webview_placeholder_page))
             .apply_over(cx, live!{ visible: (current == Some(PageId::WebViewPlaceholder)) });
+        self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.converter_page))
+            .apply_over(cx, live!{ visible: (current == Some(PageId::Converter)) });
         self.ui.view(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.plugin_page))
             .apply_over(cx, live!{ visible: (current == Some(PageId::Plugin)) });
     }
@@ -1113,6 +1133,7 @@ impl App {
             PageId::HelloWorld => ("Hello World (Python)", "WebView demo starter app"),
             PageId::HelloWorldRust => ("Hello World (Rust)", "Rust-powered WebView demo app"),
             PageId::WebViewPlaceholder => ("WebView Demo 2", "Placeholder WebView app"),
+            PageId::Converter => ("内容转换器", "在音频、视频与文稿之间自由转换"),
             PageId::Plugin => ("Plugin", "Dynamic plugin"),
         };
 
@@ -1404,6 +1425,10 @@ impl App {
 
         // Apply to Settings screen in main content
         self.ui.settings_screen(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.settings_page))
+            .update_dark_mode(cx, dm);
+
+        // Apply to Converter screen
+        self.ui.converter_screen(ids!(body.dashboard_wrapper.dashboard_base.content_area.main_content.content.converter_page))
             .update_dark_mode(cx, dm);
 
         // Apply to tab overlay content - only when tabs are open

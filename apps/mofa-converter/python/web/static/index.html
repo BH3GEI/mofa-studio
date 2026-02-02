@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>内容转换器</title>
+    <style>
+        :root {
+            --bg: #0f1115;
+            --bg-secondary: #1a1d24;
+            --bg-tertiary: #22252d;
+            --text: #e0e0e5;
+            --text-secondary: #888;
+            --text-muted: #666;
+            --accent: #4a9eff;
+            --accent-hover: #3b82f6;
+            --border: #333;
+            --success: #4ade80;
+            --error: #ef4444;
+        }
+
+        .light-mode {
+            --bg: #f5f6f8;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f0f1f3;
+            --text: #1a1d24;
+            --text-secondary: #666;
+            --text-muted: #999;
+            --border: #ddd;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 40px 24px;
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 15px;
+            margin-bottom: 40px;
+        }
+
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 16px;
+            padding: 48px 32px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--bg-secondary);
+            margin-bottom: 32px;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--accent);
+            background: rgba(74, 158, 255, 0.05);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.6;
+        }
+
+        .upload-text {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .upload-hint {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .file-selected {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 16px;
+            padding: 12px 20px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+        }
+
+        .file-selected.active {
+            display: flex;
+        }
+
+        .file-name {
+            font-size: 14px;
+            color: var(--text);
+        }
+
+        .file-remove {
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .file-remove:hover {
+            color: var(--error);
+        }
+
+        /* Converter Section */
+        .converter-section {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 20px;
+            align-items: start;
+            margin-bottom: 24px;
+        }
+
+        .converter-box {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .converter-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .format-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .format-btn {
+            padding: 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid transparent;
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-align: center;
+        }
+
+        .format-btn:hover {
+            border-color: var(--accent);
+        }
+
+        .format-btn.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .arrow-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 40px;
+            font-size: 24px;
+            color: var(--text-muted);
+        }
+
+        /* Text Input */
+        .text-input-area {
+            display: none;
+            margin-bottom: 24px;
+        }
+
+        .text-input-area.active {
+            display: block;
+        }
+
+        .text-input {
+            width: 100%;
+            min-height: 200px;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            font-size: 15px;
+            line-height: 1.6;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .tab:hover {
+            color: var(--text);
+        }
+
+        .tab.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        /* Convert Button */
+        .convert-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--accent);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 24px;
+        }
+
+        .convert-btn:hover:not(:disabled) {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .convert-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Progress */
+        .progress-section {
+            display: none;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .progress-section.active {
+            display: block;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+
+        .progress-stage {
+            margin-top: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Result */
+        .result-section {
+            display: none;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .result-section.active {
+            display: block;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .result-title {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            padding: 8px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .action-btn:hover {
+            border-color: var(--accent);
+        }
+
+        .result-content {
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 14px;
+            line-height: 1.6;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        /* Error */
+        .error-box {
+            display: none;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--error);
+            color: var(--error);
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .error-box.active {
+            display: block;
+        }
+
+        /* Hidden input */
+        #fileInput { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>内容转换器</h1>
+        <p class="subtitle">在音频、视频与文稿之间自由转换</p>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('file')">文件转换</button>
+            <button class="tab" onclick="switchTab('text')">文字转换</button>
+        </div>
+
+        <!-- File Upload Section -->
+        <div id="fileSection">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">点击或拖拽文件至此处</div>
+                <div class="upload-hint">支持 MP3、WAV、MP4、MOV、TXT、MD 等格式</div>
+                <div class="file-selected" id="fileSelected">
+                    <span class="file-name" id="fileName"></span>
+                    <span class="file-remove" onclick="clearFile()">×</span>
+                </div>
+            </div>
+            <input type="file" id="fileInput" onchange="handleFileSelect(event)">
+        </div>
+
+        <!-- Text Input Section -->
+        <div class="text-input-area" id="textSection">
+            <textarea class="text-input" id="textInput" placeholder="在此输入或粘贴文稿内容..."></textarea>
+        </div>
+
+        <!-- Converter Selection -->
+        <div class="converter-section">
+            <div class="converter-box">
+                <div class="converter-label">来源格式</div>
+                <div class="format-grid" id="sourceFormats">
+                    <button class="format-btn active" data-type="audio" onclick="selectSource('audio')">音频</button>
+                    <button class="format-btn" data-type="video" onclick="selectSource('video')">视频</button>
+                    <button class="format-btn" data-type="text" onclick="selectSource('text')">文稿</button>
+                    <button class="format-btn" data-type="auto" onclick="selectSource('auto')">自动检测</button>
+                </div>
+            </div>
+            <div class="arrow-icon">→</div>
+            <div class="converter-box">
+                <div class="converter-label">目标格式</div>
+                <div class="format-grid" id="targetFormats">
+                    <button class="format-btn" data-type="text" onclick="selectTarget('text')">文稿</button>
+                    <button class="format-btn active" data-type="audio" onclick="selectTarget('audio')">音频</button>
+                    <button class="format-btn" data-type="video" onclick="selectTarget('video')">视频</button>
+                    <button class="format-btn" data-type="srt" onclick="selectTarget('srt')">字幕</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error -->
+        <div class="error-box" id="errorBox"></div>
+
+        <!-- Convert Button -->
+        <button class="convert-btn" id="convertBtn" onclick="startConvert()">开始转换</button>
+
+        <!-- Progress -->
+        <div class="progress-section" id="progressSection">
+            <div class="progress-header">
+                <span>处理中...</span>
+                <span id="progressPercent">0%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+            <div class="progress-stage" id="progressStage">准备中...</div>
+        </div>
+
+        <!-- Result -->
+        <div class="result-section" id="resultSection">
+            <div class="result-header">
+                <span class="result-title">转换结果</span>
+                <div class="result-actions">
+                    <button class="action-btn" onclick="copyResult()">复制</button>
+                    <button class="action-btn" onclick="downloadResult()">下载</button>
+                </div>
+            </div>
+            <div class="result-content" id="resultContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // Theme support
+        window.setTheme = function(darkMode) {
+            if (darkMode > 0.5) {
+                document.body.classList.remove('light-mode');
+            } else {
+                document.body.classList.add('light-mode');
+            }
+        };
+
+        // State
+        let currentTab = 'file';
+        let selectedFile = null;
+        let sourceType = 'audio';
+        let targetType = 'audio';
+        let currentJobId = null;
+
+        // Tab switching
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+
+            if (tab === 'file') {
+                document.getElementById('fileSection').style.display = 'block';
+                document.getElementById('textSection').classList.remove('active');
+            } else {
+                document.getElementById('fileSection').style.display = 'none';
+                document.getElementById('textSection').classList.add('active');
+            }
+            clearError();
+        }
+
+        // File upload
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        function handleFileSelect(e) {
+            if (e.target.files.length) {
+                handleFile(e.target.files[0]);
+            }
+        }
+
+        function handleFile(file) {
+            selectedFile = file;
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSelected').classList.add('active');
+            clearError();
+        }
+
+        function clearFile() {
+            selectedFile = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileSelected').classList.remove('active');
+        }
+
+        // Format selection
+        function selectSource(type) {
+            sourceType = type;
+            document.querySelectorAll('#sourceFormats .format-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.type === type);
+            });
+        }
+
+        function selectTarget(type) {
+            targetType = type;
+            document.querySelectorAll('#targetFormats .format-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.type === type);
+            });
+        }
+
+        // Convert
+        async function startConvert() {
+            if (currentTab === 'file' && !selectedFile) {
+                showError('请先选择文件');
+                return;
+            }
+
+            if (currentTab === 'text' && !document.getElementById('textInput').value.trim()) {
+                showError('请输入文字内容');
+                return;
+            }
+
+            if (sourceType === targetType) {
+                showError('来源格式与目标格式不能相同');
+                return;
+            }
+
+            clearError();
+            document.getElementById('convertBtn').disabled = true;
+            document.getElementById('convertBtn').textContent = '转换中...';
+            document.getElementById('progressSection').classList.add('active');
+            document.getElementById('resultSection').classList.remove('active');
+
+            try {
+                if (currentTab === 'file') {
+                    // File upload
+                    const formData = new FormData();
+                    formData.append('file', selectedFile);
+                    formData.append('target', targetType);
+
+                    const res = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await res.json();
+
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+
+                    currentJobId = data.job_id;
+                } else {
+                    // Text conversion
+                    const res = await fetch('/api/convert', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            source_type: 'text',
+                            target_type: targetType,
+                            content: document.getElementById('textInput').value
+                        })
+                    });
+                    const data = await res.json();
+
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+
+                    currentJobId = data.job_id;
+                }
+
+                pollStatus();
+            } catch (err) {
+                showError(err.message);
+                resetUI();
+            }
+        }
+
+        async function pollStatus() {
+            if (!currentJobId) return;
+
+            try {
+                const res = await fetch(`/api/status?id=${currentJobId}`);
+                const job = await res.json();
+
+                if (job.error && job.status === 'error') {
+                    throw new Error(job.error);
+                }
+
+                // Update progress
+                document.getElementById('progressFill').style.width = job.progress + '%';
+                document.getElementById('progressPercent').textContent = job.progress + '%';
+                document.getElementById('progressStage').textContent = job.stage || '处理中...';
+
+                if (job.status === 'completed') {
+                    showResult(job.result);
+                    resetUI();
+                } else if (job.status !== 'error') {
+                    setTimeout(pollStatus, 500);
+                }
+            } catch (err) {
+                showError(err.message);
+                resetUI();
+            }
+        }
+
+        function showResult(result) {
+            document.getElementById('progressSection').classList.remove('active');
+            document.getElementById('resultSection').classList.add('active');
+
+            if (result.type === 'text') {
+                document.getElementById('resultContent').textContent = result.content;
+            } else {
+                document.getElementById('resultContent').innerHTML = `
+                    <div style="text-align: center; padding: 40px;">
+                        <div style="font-size: 48px; margin-bottom: 16px;">✓</div>
+                        <div>${result.type === 'audio' ? '音频' : '视频'}转换完成</div>
+                        <div style="color: var(--text-secondary); margin-top: 8px; font-size: 13px;">
+                            时长: ${formatDuration(result.duration)}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function formatDuration(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function resetUI() {
+            document.getElementById('convertBtn').disabled = false;
+            document.getElementById('convertBtn').textContent = '开始转换';
+        }
+
+        function showError(msg) {
+            document.getElementById('errorBox').textContent = msg;
+            document.getElementById('errorBox').classList.add('active');
+        }
+
+        function clearError() {
+            document.getElementById('errorBox').classList.remove('active');
+        }
+
+        function copyResult() {
+            const content = document.getElementById('resultContent').textContent;
+            navigator.clipboard.writeText(content).then(() => {
+                const btn = event.target;
+                const original = btn.textContent;
+                btn.textContent = '已复制';
+                setTimeout(() => btn.textContent = original, 1500);
+            });
+        }
+
+        function downloadResult() {
+            const content = document.getElementById('resultContent').textContent;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `converted_${Date.now()}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

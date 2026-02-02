@@ -25,4 +25,5 @@ Build apps as self-contained crates under `apps/`. Use `MofaApp` for registratio
 ## 4. References
 - references/app-workflow.md
 - references/shell-integration.md
+- references/webview-app-creation.md - WebView-based app 完整创建流程
 - references/app-edge-cases.md

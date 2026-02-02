@@ -122,6 +122,8 @@ pub enum PageId {
     HelloWorldRust,
     /// WebView Placeholder page
     WebViewPlaceholder,
+    /// Content Converter page
+    Converter,
     /// Dynamic plugin page (for WebView plugins)
     Plugin,
 }
@@ -144,6 +146,7 @@ impl PageId {
             PageId::HelloWorld => live_id!(hello_world_tab),
             PageId::HelloWorldRust => live_id!(hello_world_rust_tab),
             PageId::WebViewPlaceholder => live_id!(webview_placeholder_tab),
+            PageId::Converter => live_id!(converter_tab),
             PageId::Plugin => live_id!(plugin_tab),
         }
     }
@@ -165,6 +168,7 @@ impl PageId {
             PageId::HelloWorld => live_id!(hello_world_page),
             PageId::HelloWorldRust => live_id!(hello_world_rust_page),
             PageId::WebViewPlaceholder => live_id!(webview_placeholder_page),
+            PageId::Converter => live_id!(converter_page),
             PageId::Plugin => live_id!(plugin_page),
         }
     }
@@ -200,6 +204,7 @@ impl PageRouter {
                 PageId::HelloWorld,
                 PageId::HelloWorldRust,
                 PageId::WebViewPlaceholder,
+                PageId::Converter,
                 PageId::Plugin,
             ],
         }
