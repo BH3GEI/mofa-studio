@@ -605,6 +605,17 @@ if $DO_SIGN; then
     else
         SIGN_TIMESTAMP_FLAG="--timestamp"
     fi
+    if [ -d "$PYTHON_FRAMEWORK_DST" ]; then
+        echo "   Signing embedded Python binaries..."
+        while IFS= read -r -d '' bin; do
+            codesign --force --options runtime \
+                $SIGN_TIMESTAMP_FLAG \
+                --sign "$SIGN_IDENTITY" \
+                "$bin" 2>/dev/null || true
+        done < <(
+            find "$PYTHON_FRAMEWORK_DST" -type f \( -name "*.so" -o -name "*.dylib" -o -name "Python" -o -name "python3*" \) -print0
+        )
+    fi
     codesign --deep --force --options runtime \
         $SIGN_TIMESTAMP_FLAG \
         --sign "$SIGN_IDENTITY" \
